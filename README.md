@@ -23,6 +23,7 @@ TODO:
 Implement a sysfs in /sys/devices/rpu with the following structure
 /sys/devices/rpu/
 |- control /* 1: start to run. 0: stop the core */
+|- status /* check the currect status, but details are not decided yet */
 |- ram /* Read from or write to RAM */
 |- flash /* Read from or write to Flash */
 </pre>
