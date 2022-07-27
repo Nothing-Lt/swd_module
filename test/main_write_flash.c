@@ -18,6 +18,7 @@ int main(int argc, char **argv)
     int fd = -1;
     uint32_t buf_ori[BUFSIZ/8];
     uint32_t buf_result[BUFSIZ/8];
+    struct swd_parameters params;
 
     srand((unsigned long)time(NULL));
 
@@ -33,13 +34,11 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // Download to Flash
-    if(write(fd, buf_ori, sizeof(buf_ori)) < 0) {
-        printf("Failed to write flash\n");
-    }
-    else {
-        printf("Write flash Success\n");
-    }
+    // Download to flash
+    params.arg[0] = (unsigned long)buf_ori;
+    params.arg[1] = 0x08000000;
+    params.arg[2] = sizeof(buf_ori);
+    ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params);
 
     // Read and verify
     read(fd, buf_result, sizeof(buf_result));

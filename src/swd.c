@@ -966,32 +966,6 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     return len_to_cpy;
 }
 
-// able to write to flash
-static ssize_t swd_write(struct file *filp, const char *user_buf, size_t len, loff_t *off)
-{
-    char *buf = NULL;
-    ssize_t ret;
-    struct swd_dev *dev = (struct swd_dev*)(filp->private_data);
-
-    pr_info("%s: [%s] %d write start\n", SWDDEV_NAME, __func__, __LINE__);
-
-    buf = kmalloc(len, GFP_KERNEL);
-    if (!buf)
-        return -ENOMEM;
-        
-    if(copy_from_user(buf, user_buf, len)){
-        kfree(buf);
-        return -EFAULT;
-    }
-
-    ret = _swd_program_flash(buf, dev->ope_base, len);
-    
-    kfree(buf);
-
-    pr_info("%s: [%s] %d write finish\n", SWDDEV_NAME, __func__, __LINE__);
-    return ret;
-}
-
 //  1. reset line
 //  2. read dp reg
 //  3. write dp reg
@@ -1056,6 +1030,17 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         kfree(buf);
         break;
     case SWDDEV_IOC_DWNLDFLSH:
+        if(copy_from_user(&params, (void*)arg, sizeof(struct swd_parameters)))
+            return -EFAULT;
+        buf = kmalloc(params.arg[2], GFP_KERNEL);
+        if (!buf)
+            return -ENOMEM;
+        if(copy_from_user(buf, (void*)(params.arg[0]), params.arg[2])){
+            kfree(buf);
+            return -EFAULT;
+        }
+        ret = _swd_program_flash(buf, params.arg[1], params.arg[2]);
+        kfree(buf);
         break;
     case SWDDEV_IOC_ERSFLSH:
         _swd_erase_flash_all();
@@ -1073,7 +1058,6 @@ static struct file_operations fops = {
     .open       = swd_open,
     .release    = swd_release,
     .read       = swd_read,
-    .write      = swd_write,
     .unlocked_ioctl = swd_ioctl
 };
 
