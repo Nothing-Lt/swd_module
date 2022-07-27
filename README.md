@@ -19,6 +19,8 @@ A real-time processing unit. This is a solution for SoCs like raspberry-pi which
 | BeagleBone-Black | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 
 TODO:
+- Device tree version
+- Add sysfs probe
 <pre>
 Implement a sysfs in /sys/devices/rpu with the following structure
 /sys/devices/rpu/
