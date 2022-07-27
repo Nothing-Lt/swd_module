@@ -927,7 +927,6 @@ static int swd_release(struct inode *inode, struct file* filp)
     return 0;
 }
 
-// able to read from flash (start from 0x08000000)
 static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *off)
 {
     int ret;
