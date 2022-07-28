@@ -13,7 +13,6 @@ int main(int argc, char **argv)
     int fd = -1;
     struct swd_parameters params;
 
-    printf("bufsiz:%d\n", BUFSIZ);
     fd = open("/dev/swd", O_RDWR);
     if(fd < 0){
         printf("Err with open dev\n");

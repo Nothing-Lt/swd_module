@@ -12,33 +12,40 @@
 
 #include "../include/swd_module.h"
 
+#define FLASH_PAGE_SIZE 0x1000
+
 int main(int argc, char **argv)
 {
     int i;
     int fd = -1;
-    uint32_t buf_ori[BUFSIZ/8];
-    uint32_t buf_result[BUFSIZ/8];
+    uint32_t base;
+    uint32_t buf_ori[BUFSIZ];
+    uint32_t buf_result[BUFSIZ];
     struct swd_parameters params;
 
     srand((unsigned long)time(NULL));
 
     // Initialize test data
-    for (i = 0 ; i < BUFSIZ/8 ; i++) {
+    for (i = 0 ; i < BUFSIZ ; i++) {
         buf_ori[i] = (uint32_t)rand();
     }
 
-    printf("bufsiz:%d\n", BUFSIZ/8);
+    printf("bufsiz:%d\n", BUFSIZ);
     fd = open("/dev/swd", O_RDWR);
     if(fd < 0){
         printf("Err with open dev\n");
         return -1;
     }
 
-    // Download to flash
-    params.arg[0] = (unsigned long)buf_ori;
-    params.arg[1] = 0x08000000;
-    params.arg[2] = sizeof(buf_ori);
-    ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params);
+    base = 0x08000000;
+    for (i=0 ; i < BUFSIZ/(FLASH_PAGE_SIZE/4) ; i++) {
+        // Download to Flash
+        params.arg[0] = (unsigned long)&(buf_ori[i*(FLASH_PAGE_SIZE/4)]);
+        params.arg[1] = base;
+        params.arg[2] = FLASH_PAGE_SIZE;
+        ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params);
+        base += FLASH_PAGE_SIZE;
+    }
 
     // Read and verify
     read(fd, buf_result, sizeof(buf_result));
