@@ -105,7 +105,9 @@ enum SWD_REGS {
 
 #define SWD_FLASH_BASE  0x08000000
 #define SWD_RAM_BASE    0x20000000
-#define FLASH_PAGE_SIZE 0x400
+
+#define FLASH_PAGE_SIZE 0x1000
+#define RAM_PAGE_SIZE 0x400
 
 #define FLASH_MIR_BASE  0x40022000
 #define FLASH_ACR       FLASH_MIR_BASE
@@ -441,14 +443,12 @@ static ssize_t _swd_ap_read(void* to, u32 base, const ssize_t len)
             pr_err("%s: [%s] %d ack:%d\n", SWDDEV_NAME, __func__, __LINE__, ack);
             break;
         }
-        pr_err("%s: [%s] %d idx:%d value: %08x\n", SWDDEV_NAME, __func__, __LINE__, i, data);
         buf[i] = data;
     }
 
     _swd_read(SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &data, true);
     buf[i] = data;
-    pr_err("%s: [%s] %d value: %08x\n", SWDDEV_NAME, __func__, __LINE__, data);
-    
+  
     return (++i) * 4;
 }
 
@@ -472,7 +472,6 @@ static ssize_t _swd_ap_write(void *from, u32 base, u32 len)
     }
 
     for (i = 0 ; i < len_to_write ; i++) {
-        pr_err("%s: [%s] %d idx:%d value: %08x\n", SWDDEV_NAME, __func__, __LINE__, i, buf[i]);
         ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, buf[i], true);
         if (ack != SWD_OK) {
             pr_err("%s: [%s] %d ack:%d\n", SWDDEV_NAME, __func__, __LINE__, ack);
@@ -480,8 +479,6 @@ static ssize_t _swd_ap_write(void *from, u32 base, u32 len)
         }
     }
 
-    pr_err("%s: [%s] %d write: %d\n", SWDDEV_NAME, __func__, __LINE__, i);
-    
     return (++i) * 4;
 }
 
@@ -534,7 +531,7 @@ static int _swd_halt_core(void)
         return -ENODEV;
     }
 
-    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0001, true);
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0003, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
@@ -584,7 +581,7 @@ static int _swd_halt_core(void)
         return -ENODEV;
     }
 
-    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xFA050004, true);
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0004, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
@@ -611,6 +608,53 @@ static int _swd_halt_core(void)
     }
 
     return 0;
+}
+
+static void _swd_unhalt_core(void)
+{
+    u8 ack;
+
+    // DHCSR.C_DEBUGEN = 1
+    ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd select failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DHCSR_REG, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_tar failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0000, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    // reset the core
+    ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_AIRCR_REG, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
+
+    ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0007, true);
+    if (ack != SWD_OK) {
+        pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
+    }
 }
 
 static int _swd_init(void)
@@ -765,6 +809,7 @@ static void _swd_erase_flash_page(u32 base, u32 len)
     int i;
     u32 data;
     int retry;
+    int page_len;
 
     // 1. write FLASH_CR_PER to 1
     _swd_ap_read(&data, FLASH_CR, sizeof(u32));
@@ -772,7 +817,11 @@ static void _swd_erase_flash_page(u32 base, u32 len)
     _swd_ap_write(&data, FLASH_CR, sizeof(u32));
     
     // 2. write address to FAR
-    for (i = 0 ; i < (len / FLASH_PAGE_SIZE) ; i++) {
+    if (len % RAM_PAGE_SIZE)
+        page_len = (len / RAM_PAGE_SIZE) + 1;
+    else 
+        page_len = len / RAM_PAGE_SIZE;
+    for (i = 0 ; i < page_len ; i++) {
         _swd_ap_write(&base, FLASH_AR, sizeof(u32));
 
         // 3, write FLASH_CR_STRT to 1
@@ -787,7 +836,7 @@ static void _swd_erase_flash_page(u32 base, u32 len)
             _swd_ap_read(&data, FLASH_SR, sizeof(u32));
         }while((retry--) && (data & FLASH_SR_BSY_MSK));
 
-        base += FLASH_PAGE_SIZE;
+        base += RAM_PAGE_SIZE;
     }
 
     // Restore the original value of FLASH_CR
@@ -800,6 +849,7 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
 {
     int i;
     int retry;
+    int err;
     u8 ack;
     u32 data;
     u32 cur_base;
@@ -875,20 +925,22 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
     _swd_ap_write(&data, FLASH_CR, sizeof(u32));
 
     // verify
+    err = 0;
     cur_base = base;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(&data, cur_base, sizeof(u32));
-        if (data != buf[i]) {
-            pr_info("%s: [%s] buf:%08x data:%08x\n", SWDDEV_NAME, __func__, buf[i], data);
-            break;
-        }
+        if (data != buf[i]) 
+            err++;
+
         cur_base += sizeof(u32);
     }
 
-    if (i < len_to_read) {
+    pr_info("%s: [%s] errors:%d\n", SWDDEV_NAME, __func__, err);
+
+    if (err) {
         _swd_erase_flash_page(base, len);
         _swd_lock_flash();
-        return -1;
+        return err;
     }
 
     _swd_lock_flash();
@@ -965,10 +1017,11 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     return len_to_cpy;
 }
 
-//  1. reset line
-//  2. read dp reg
-//  3. write dp reg
-//  4. halt core
+//  0. reset line
+//  1. read dp reg
+//  2. write dp reg
+//  3. halt core
+//  4. unhalt core
 //  5. test alive
 //  6. set base
 //  7. download to sram
@@ -1003,6 +1056,10 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     case SWDDEV_IOC_HLTCORE:
         _swd_jtag_to_swd();
         _swd_halt_core();
+        break;
+    case SWDDEV_IOC_UNHLTCORE:
+        _swd_unhalt_core();
+        _swd_reset();
         break;
     case SWDDEV_IOC_TSTALIVE:
         _swd_jtag_to_swd();
