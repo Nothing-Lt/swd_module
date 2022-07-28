@@ -19,7 +19,6 @@ int main(int argc, char **argv)
 {
     int i;
     int fd = -1;
-    int err = 0;
     uint32_t base;
     uint32_t buf_size;
     uint32_t file_size;
@@ -61,19 +60,18 @@ int main(int argc, char **argv)
         params.arg[0] = ((unsigned long)buf) + (i * FLASH_PAGE_SIZE);
         params.arg[1] = base;
         params.arg[2] = FLASH_PAGE_SIZE;
-        err = ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params);
-        if (err) {
-            printf("Program flash failed with err: %d\n", err);
-            goto flash_program_fail;
+        if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
+            i--;
+            continue;
         }
 
+        printf("Programmed -%d/%d-\n", i+1, buf_size/FLASH_PAGE_SIZE);
         base += FLASH_PAGE_SIZE;
     }
 
     printf("Flash program finished\n");
     ioctl(fd, SWDDEV_IOC_UNHLTCORE);
 
-flash_program_fail:
 buf_alloc_fail:
     fclose(fp);
 

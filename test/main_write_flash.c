@@ -43,7 +43,12 @@ int main(int argc, char **argv)
         params.arg[0] = (unsigned long)&(buf_ori[i*(FLASH_PAGE_SIZE/4)]);
         params.arg[1] = base;
         params.arg[2] = FLASH_PAGE_SIZE;
-        ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params);
+        if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
+            i--;
+            continue;
+        }
+
+        printf("Programmed -%d/%d-\n", i+1, BUFSIZ/(FLASH_PAGE_SIZE/4));
         base += FLASH_PAGE_SIZE;
     }
 
