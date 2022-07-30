@@ -1,7 +1,10 @@
-# RPU (Real-time Processing Unit)
+# swd_module
 
 ## Introduction
-A real-time processing unit. This is a solution for SoCs like raspberry-pi which has powerful application core running Linux kernel but no real-time processing unit. Some MPUs like AM33x used by Beaglebone-Black has a PRU and STM32MP1x has a cortex-m core. This repository is a solution for it. 
+A kernel module for you to program your *bluepill* by emulating [ARM Serial Wire Debug (SWD) protocol](https://developer.arm.com/documentation/ihi0031/a/The-Serial-Wire-Debug-Port--SW-DP-/Introduction-to-the-ARM-Serial-Wire-Debug--SWD--protocol).
+- Some SoCs like raspberry-pi which has powerful application core running Linux kernel but no real-time processing unit. 
+- Some MPUs like AM33x used by Beaglebone-Black has a PRU and STM32MP1x has a cortex-m core. 
+- This kernel module aims to make the SoC which has no sub-core have an external extended cortex-m sub-core and control it by SoC via emulated SWD protocol.
 
 *So far I targeted on Cortex-M3 chips that I have the "bluepill" called by people with a stm32f103cbt6 MCU.*
 
