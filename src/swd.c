@@ -26,6 +26,7 @@ static struct device *dev;
 static int swd_major = 0;
 
 static spinlock_t __lock;
+static atomic_t open_lock = ATOMIC_INIT(1);
 static int _swclk_pin = 66;
 static int _swdio_pin = 69;
 
@@ -954,6 +955,12 @@ static int swd_open(struct inode *inode, struct file* filp)
 
     pr_info("%s: [%s] %d open start\n", SWDDEV_NAME, __func__, __LINE__);
 
+    // allow one process to open it.
+    if(!atomic_dec_and_test(&open_lock)){
+        atomic_inc(&open_lock);
+        return -EBUSY;
+    }
+
     ret = _swd_init();
     if (ret) {
         pr_err("%s: [%s] %d error with _swd_init\n", SWDDEV_NAME, __func__, __LINE__);
@@ -974,6 +981,8 @@ static int swd_release(struct inode *inode, struct file* filp)
 {
     pr_info("%s: [%s] %d release start\n", SWDDEV_NAME, __func__, __LINE__);
 
+    atomic_inc(&open_lock);
+    
     pr_info("%s: [%s] %d release finished\n", SWDDEV_NAME, __func__, __LINE__);
 
     return 0;
