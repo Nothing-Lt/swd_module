@@ -1119,135 +1119,6 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     return ret;
 }
 
-int control;
-int status;
-int sram;
-int flash;
-struct device *rpu_dev;
-static ssize_t sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-    pr_info("%s: [%s] start\n", SWDDEV_NAME, __func__);
-
-    if (!strcmp(attr->attr.name, "sram")) {
-        pr_info("%s: [%s] sram \n", SWDDEV_NAME, __func__);
-    } else if (!strcmp(attr->attr.name, "flash")) {
-        pr_info("%s: [%s] flash \n", SWDDEV_NAME, __func__);
-    } else if (!strcmp(attr->attr.name, "status")) {
-        pr_info("%s: [%s] status \n", SWDDEV_NAME, __func__);
-    } else if (!strcmp(attr->attr.name, "control")) {
-        pr_info("%s: [%s] control \n", SWDDEV_NAME, __func__);
-        sprintf(buf, "%d\n", control);
-    } else {
-        pr_err("%s: [%s] Unknown attr:%s\n", SWDDEV_NAME, __func__, attr->attr.name);
-    }
-
-    pr_info("%s: [%s] finish\n", SWDDEV_NAME, __func__);
-
-    return 0;   
-}
-
-static ssize_t sysfs_store(struct kobject *kobj, struct kobj_attribute *attr,const char *buf, size_t count)
-{
-    int ret;
-    int val;
-
-    pr_info("%s: [%s] start\n", SWDDEV_NAME, __func__);
-
-    if (!strcmp(attr->attr.name, "sram")) {
-        pr_info("%s: [%s] sram \n", SWDDEV_NAME, __func__);
-    } else if (!strcmp(attr->attr.name, "flash")) {
-        pr_info("%s: [%s] flash \n", SWDDEV_NAME, __func__);
-    } else if (!strcmp(attr->attr.name, "control")) {
-        pr_info("%s: [%s] control \n", SWDDEV_NAME, __func__);
-        ret = kstrtoint(buf, 2, &val);
-        if (ret < 0)
-            return ret;
-        
-        control = val;
-        _swd_init();
-        if (control == 1)
-            _swd_unhalt_core();
-        else
-            _swd_halt_core();
-    } else {
-        pr_err("%s: [%s] Unknown attr:%s\n", SWDDEV_NAME, __func__, attr->attr.name);
-    }
-    
-    pr_info("%s: [%s] finish\n", SWDDEV_NAME, __func__);
-
-    return count;   
-}
-
-struct kobj_attribute sram_attr = __ATTR(sram, 0664, sysfs_show, sysfs_store);
-struct kobj_attribute flash_attr = __ATTR(flash, 0664, sysfs_show, sysfs_store);
-struct kobj_attribute status_attr = __ATTR(status, 0444, sysfs_show, sysfs_store);
-struct kobj_attribute control_attr = __ATTR(control, 0664, sysfs_show, sysfs_store);
-
-static int rpu_sysfs_init(void)
-{
-    int ret;
-
-    // Create /sys/devices/rpu 
-    rpu_dev = root_device_register("rpu");
-    if (IS_ERR(rpu_dev)) {
-        pr_err("%s: [%s] root_device_register failed\n", SWDDEV_NAME, __func__);
-        ret = PTR_ERR(rpu_dev);
-        goto rpu_register_fail;
-    }
-    // rpu_kobject = &(rpu_dev->kobj);
-
-    // Create the following files to get structure
-    // /sys/devices/rpu
-    // |- sram      -> read/write rpu's sram 
-    // |- flash     -> read/write rpu's flash
-    // |- status    -> read rpu's status
-    // |- control   -> read/write rpu's control status
-    ret = sysfs_create_file(&(rpu_dev->kobj), &sram_attr.attr);
-    if (ret) {
-        pr_err("%s: [%s] sram create failed\n", SWDDEV_NAME, __func__);
-        goto sram_create_fail;
-    }
-
-    ret = sysfs_create_file(&(rpu_dev->kobj), &flash_attr.attr);
-    if (ret) {
-        pr_err("%s: [%s] flash create failed\n", SWDDEV_NAME, __func__);
-        goto flash_create_fail;
-    }
-
-    ret = sysfs_create_file(&(rpu_dev->kobj), &status_attr.attr);
-    if (ret) {
-        pr_err("%s: [%s] status create failed\n", SWDDEV_NAME, __func__);
-        goto status_create_fail;
-    }
-
-    ret = sysfs_create_file(&(rpu_dev->kobj), &control_attr.attr);
-    if (ret) {
-        pr_err("%s: [%s] control create failed\n", SWDDEV_NAME, __func__);
-        goto control_create_fail;
-    }
-
-    pr_info("%s: [%s] rpu sysfs probe success\n", SWDDEV_NAME, __func__);
-    return 0;
-
-control_create_fail:
-status_create_fail:
-flash_create_fail:
-sram_create_fail:
-    root_device_unregister(rpu_dev);
-
-rpu_register_fail:
-    return ret;
-}
-
-static void rpu_sysfs_exit(void)
-{
-    pr_info("%s: [%s] start\n", SWDDEV_NAME, __func__);
-
-    root_device_unregister(rpu_dev);
-
-    pr_info("%s: [%s] finished\n", SWDDEV_NAME, __func__);
-}
-
 static struct file_operations fops = {
     .open       = swd_open,
     .release    = swd_release,
@@ -1294,15 +1165,10 @@ static int __init swd_init(void)
     if (!dev)
         goto device_create_fail;
 
-    ret = rpu_sysfs_init();
-    if (ret)
-        goto rpu_sysfs_init_fail;
-
     spin_lock_init(&__lock);
     pr_info("%s: [%s] %d probe finished\n", SWDDEV_NAME, __func__, __LINE__);
     return 0;
 
-rpu_sysfs_init_fail:
 device_create_fail:
     class_destroy(cls);
 
@@ -1326,7 +1192,6 @@ static void __exit swd_exit(void)
 {
     pr_info("%s: [%s] %d exit start\n", SWDDEV_NAME, __func__, __LINE__);
     
-    rpu_sysfs_exit();
     gpio_free(_swdio_pin);
     gpio_free(_swclk_pin);
     device_destroy(cls, MKDEV(swd_major, 0));
