@@ -6,7 +6,7 @@ A kernel module for you to program your *bluepill* by emulating [ARM Serial Wire
 - Some MPUs like AM33x used by Beaglebone-Black has a PRU and STM32MP1x has a cortex-m core. 
 - This kernel module aims to make the SoC which has no sub-core have an external extended cortex-m sub-core and control it by SoC via emulated SWD protocol.
 
-*So far I targeted on Cortex-M3 chips that I have the "bluepill" called by people with a stm32f103cbt6 MCU.*
+*So far I targeted on Cortex-M3 chips that I have is "bluepill" with a stm32f103cbt6 MCU.*
 
 ## Usage
 - Set the _swclk_pin and _swdio_pin. 
