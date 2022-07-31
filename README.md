@@ -20,15 +20,3 @@ A kernel module for you to program your *bluepill* by emulating [ARM Serial Wire
 | RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 | RPI4 |
 | BeagleBone-Black | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
-
-TODO:
-- Device tree version
-- Add sysfs probe
-<pre>
-Implement a sysfs in /sys/devices/rpu with the following structure
-/sys/devices/rpu/
-|- control /* 1: start to run. 0: stop the core */
-|- status /* check the currect status, but details are not decided yet */
-|- ram /* Read from or write to RAM */
-|- flash /* Read from or write to Flash */
-</pre>
