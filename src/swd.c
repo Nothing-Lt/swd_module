@@ -931,7 +931,7 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(&data, cur_base, sizeof(u32));
         if (data != buf[i]) 
-            err++;
+            err += 4;
 
         cur_base += sizeof(u32);
     }
