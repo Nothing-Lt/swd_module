@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "../include/swd_module.h"
+#include "../../include/swd_module.h"
 
 int main(int argc, char **argv)
 {

@@ -6,7 +6,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "../include/swd_module.h"
+#include "../../include/swd_module.h"
 
 int main(int argc, char **argv)
 {
@@ -15,12 +15,13 @@ int main(int argc, char **argv)
 
     fd = open("/dev/swd", O_RDWR);
     if(fd < 0){
-        printf("Err with open dev\n");
+        printf("Err with open dev fd:%d\n", fd);
         return -1;
     }
 
-    params.arg[0] = 0x20000000;
-    ioctl(fd, SWDDEV_IOC_SETBASE, &params);
+    params.arg[0] = 0;
+    ioctl(fd, SWDDEV_IOC_RDDPREG, &params);
+    printf("vla:%lx\n", params.ret);
 
     close(fd);
 

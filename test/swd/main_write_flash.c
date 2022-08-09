@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../include/swd_module.h"
+#include "../../include/swd_module.h"
 
 #define FLASH_PAGE_SIZE 0x1000
 

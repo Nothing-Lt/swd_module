@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../include/swd_module.h"
+#include "../../include/swd_module.h"
 
 #define BIN_FILE    "blink.bin"
 #define FLASH_PAGE_SIZE 0x1000

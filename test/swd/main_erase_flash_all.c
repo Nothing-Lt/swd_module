@@ -6,12 +6,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "../include/swd_module.h"
+#include "../../include/swd_module.h"
 
 int main(int argc, char **argv)
 {
     int fd = -1;
-    struct swd_parameters params;
 
     fd = open("/dev/swd", O_RDWR);
     if(fd < 0){
@@ -19,8 +18,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    ioctl(fd, SWDDEV_IOC_TSTALIVE, &params);
-    printf("vla:%lx\n", params.ret);
+    ioctl(fd, SWDDEV_IOC_ERSFLSH);
 
     close(fd);
 
