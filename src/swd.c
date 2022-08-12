@@ -990,7 +990,7 @@ static int swd_open(struct inode *inode, struct file* filp)
     ret = _swd_init();
     if (ret) {
         pr_err("%s: [%s] %d error with _swd_init\n", SWDDEV_NAME, __func__, __LINE__);
-        return ret;
+        goto swd_init_fail;
     }
 
     _swd_halt_core();
@@ -1001,6 +1001,10 @@ static int swd_open(struct inode *inode, struct file* filp)
     pr_info("%s: [%s] %d open finished\n", SWDDEV_NAME, __func__, __LINE__);
 
     return 0;
+
+swd_init_fail:
+    atomic_inc(&open_lock);
+    return ret;
 }
 
 static int swd_release(struct inode *inode, struct file* filp)
