@@ -12,7 +12,7 @@
 
 #include "../include/swd_module.h"
 
-#define BIN_FILE    "../blink.bin"
+#define BIN_FILE    "blink.bin"
 #define FLASH_PAGE_SIZE 0x1000
 
 int main(int argc, char **argv)
