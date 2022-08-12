@@ -843,7 +843,7 @@ int _swd_write_ram(void* from, u32 base, u32 len)
     u32 *buf = (u32*)from;
     u32 len_to_read = len / sizeof(u32);
 
-    // write data to flash
+    // write data to ram
     _swd_ap_write(buf, base, len);
         
     // verify
