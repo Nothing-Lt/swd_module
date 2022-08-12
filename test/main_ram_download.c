@@ -42,7 +42,12 @@ int main(int argc, char **argv)
         params.arg[0] = (unsigned long)&(buf_ori[i*(RAM_PAGE_SIZE/4)]);
         params.arg[1] = base;
         params.arg[2] = RAM_PAGE_SIZE;
-        ioctl(fd, SWDDEV_IOC_DWNLDSRAM, &params);
+        if (ioctl(fd, SWDDEV_IOC_DWNLDSRAM, &params)) {
+            i--;
+            continue;
+        }
+
+        printf("Programmed -%d/%d-\n", i+1, (BUFSIZ/8)/(RAM_PAGE_SIZE/4));
         base += RAM_PAGE_SIZE;
     }
 
