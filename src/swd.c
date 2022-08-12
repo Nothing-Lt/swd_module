@@ -171,7 +171,7 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             kfree(buf);
             return -EFAULT;
         }
-        _swd_ap_write(buf, params.arg[1], params.arg[2]);
+        ret = _swd_write_ram(buf, params.arg[1], params.arg[2]);
         kfree(buf);
         break;
     case SWDDEV_IOC_DWNLDFLSH:

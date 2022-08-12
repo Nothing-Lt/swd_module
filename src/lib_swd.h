@@ -128,4 +128,6 @@ void _swd_erase_flash_all(void);
 
 int _swd_program_flash(void *from, u32 base, u32 len);
 
+int _swd_write_ram(void* from, u32 base, u32 len);
+
 #endif
