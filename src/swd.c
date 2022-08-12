@@ -949,6 +949,32 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
     return 0;
 }
 
+int _swd_write_ram(void* from, u32 base, u32 len)
+{
+    int i;
+    int err;
+    u32 data;
+    u32 cur_base;
+    u32 *buf = (u32*)from;
+    u32 len_to_read = len / sizeof(u32);
+
+    // write data to ram
+    _swd_ap_write(buf, base, len);
+        
+    // verify
+    err = 0;
+    cur_base = base;
+    for (i = 0 ; i < len_to_read ; i++) {
+        _swd_ap_read(&data, cur_base, sizeof(u32));
+        if (data != buf[i]) 
+            err += 4;
+
+        cur_base += sizeof(u32);
+    }
+
+    return err;
+}
+
 static int swd_open(struct inode *inode, struct file* filp)
 {
     int ret;
@@ -1091,7 +1117,7 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             kfree(buf);
             return -EFAULT;
         }
-        _swd_ap_write(buf, params.arg[1], params.arg[2]);
+        ret = _swd_write_ram(buf, params.arg[1], params.arg[2]);
         kfree(buf);
         break;
     case SWDDEV_IOC_DWNLDFLSH:
