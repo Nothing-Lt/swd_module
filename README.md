@@ -42,5 +42,5 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | 
-| RPI4 | 
+| RPI4 | OK | OK | OK | OK | OK | OK |
 | BeagleBone-Black | 
