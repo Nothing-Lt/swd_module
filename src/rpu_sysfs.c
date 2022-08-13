@@ -211,7 +211,7 @@ static ssize_t rpu_ram_write(struct file *filp, struct kobject *kobj, struct bin
     len_to_write = count;
     do {
         len = (len_to_write > RAM_PAGE_SIZE) ? RAM_PAGE_SIZE : len_to_write;
-        _swd_ap_write(&(buf[pos]), RAM_PAGE_SIZE + off + pos, len);
+        err = _swd_write_ram(&(buf[pos]), SWD_RAM_BASE + off + pos, len);
         if (err)
             continue;
         len_to_write -= len;
