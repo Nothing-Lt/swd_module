@@ -34,7 +34,7 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Reset line | Test Alive | Read IDCODE | Read DP REG | Write DP REG | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
-| RPI4 | OK | OK | OK | OK | OK | NG | OK | OK | OK | OK |
+| RPI4 | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 | BeagleBone-Black | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 
 
