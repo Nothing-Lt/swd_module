@@ -41,6 +41,6 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 ## Verified function and SBC boards of rpu_sysfs
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| RPI3-B+ | 
+| RPI3-B+ | OK | OK | OK | OK | OK | OK |
 | RPI4 | OK | OK | OK | OK | OK | OK |
 | BeagleBone-Black | 
