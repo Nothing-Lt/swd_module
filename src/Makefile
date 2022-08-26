@@ -1,12 +1,10 @@
 obj-m := swd.o
 
-#KERNEL_MAKEFILE_PLACE = ~/ti-linux-kernel-dev/KERNEL
-KERNEL_MAKEFILE_PLACE = ~/workspace/bbb/tibsp/kernelbuildscripts/KERNEL
-export ARCH=arm
-export CROSS_COMPILE=arm-linux-gnueabihf-
+KERNEL_MAKEFILE_PLACE = /usr/src/linux-headers-5.15.32-v8+
 
 all:
-	make -C $(KERNEL_MAKEFILE_PLACE) M=$(PWD) ARCH=arm CROSS_COMPILE=${CC} modules
+	make -C $(KERNEL_MAKEFILE_PLACE) M=$(PWD) modules
+	dtc -@ -I dts -o dtbo -o swd-device-overlay.dtbo swd-device-overlay.dts
 
 clean:
-	make -C $(KERNEL_MAKEFILE_PLACE) M=$(PWD) CROSS_COMPILE=${CC} clean
+	make -C $(KERNEL_MAKEFILE_PLACE) M=$(PWD) clean

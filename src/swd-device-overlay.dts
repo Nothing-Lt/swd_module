@@ -1,0 +1,15 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			swd {
+				compatible = "swd";
+				swclk-gpios = <&gpio 27 0>;
+				swdio-gpios = <&gpio 17 0>;
+			};
+		};
+	};	
+};

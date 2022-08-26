@@ -4,6 +4,7 @@
 #include <linux/spinlock.h>
 #include <linux/gpio.h>
 #include <linux/fs.h>
+#include <linux/platform_device.h>
 
 #include "../include/swd_module.h"
 
@@ -22,13 +23,13 @@ static struct swd_dev
     u32 ope_base;
 } swd_dev;
 static struct class *cls;
-static struct device *dev;
+static struct device *device;
 static int swd_major = 0;
 
 static spinlock_t __lock;
 static atomic_t open_lock = ATOMIC_INIT(1);
-static int _swclk_pin = 66;
-static int _swdio_pin = 69;
+static struct gpio_desc *_swclk;
+static struct gpio_desc *_swdio;
 
 enum SWDIO_DIR {
     SWD_OUT = 0,
@@ -135,11 +136,11 @@ enum SWD_REGS {
 #define FLASH_CR_MER_MSK    BIT(FLASH_CR_MER_OFF)
 #define FLASH_CR_STRT_MSK   BIT(FLASH_CR_STRT_OFF)
 
-#define SWCLK_SET(v) gpio_direction_output(_swclk_pin, v)
-#define SWDIO_SET(v) gpio_direction_output(_swdio_pin, v)
-#define SWDIO_SET_DIR(dir)  {if (dir) {gpio_direction_input(_swdio_pin);} \
-                            else {gpio_direction_output(_swdio_pin, 1);}}
-#define SWDIO_GET(v) gpio_get_value(_swdio_pin)
+#define SWCLK_SET(v) gpiod_direction_output(_swclk, v)
+#define SWDIO_SET(v) gpiod_direction_output(_swdio, v)
+#define SWDIO_SET_DIR(dir)  {if (dir) {gpiod_direction_input(_swdio);} \
+                            else {gpiod_direction_output(_swdio, 1);}}
+#define SWDIO_GET(v) gpiod_get_value(_swdio)
 
 static inline void _delay(unsigned long long time_out)
 {
@@ -1156,23 +1157,30 @@ static struct file_operations fops = {
     .unlocked_ioctl = swd_ioctl
 };
 
-static int __init swd_init(void)
+static int swd_probe(struct platform_device *pdev)
 {
+    struct device *dev = &pdev->dev;
     dev_t devid;
     int ret;
+    
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
 
-    pr_info("%s: [%s] %d probe start\n", SWDDEV_NAME, __func__, __LINE__);
+    _swclk = devm_gpiod_get(dev, "swclk", GPIOD_OUT_LOW);
+    if (IS_ERR(_swclk)) {
+        pr_err("%s [%s] %d Err with get swclk\n", SWDDEV_NAME, __func__, __LINE__);
+        ret = PTR_ERR(_swclk);
+        goto swclk_request_fail;
+    }
+
+    _swdio = devm_gpiod_get(dev, "swdio", GPIOD_OUT_LOW);
+    if (IS_ERR(_swdio)) {
+        pr_err("%s [%s] %d Err with get swdio\n", SWDDEV_NAME, __func__, __LINE__);
+        ret = PTR_ERR(_swdio);
+        goto swdio_request_fail;
+    }
 
     cdev_init(&swd_dev.cdev, &fops);
     swd_dev.cdev.owner = THIS_MODULE;
-    
-    ret = gpio_request(_swclk_pin, NULL);
-    if (ret < 0)
-        goto swclk_pin_request_fail;
-
-    ret = gpio_request(_swdio_pin, NULL);
-    if (ret < 0)
-        goto swdio_pin_request_fail;
 
     if (swd_major) {
         ret = register_chrdev_region(MKDEV(swd_major, 0), 1, SWDDEV_NAME);
@@ -1191,12 +1199,12 @@ static int __init swd_init(void)
     if (!cls)
         goto class_create_fail;
 
-    dev = device_create(cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
-    if (!dev)
+    device = device_create(cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
+    if (!device)
         goto device_create_fail;
 
     spin_lock_init(&__lock);
-    pr_info("%s: [%s] %d probe finished\n", SWDDEV_NAME, __func__, __LINE__);
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
     return 0;
 
 device_create_fail:
@@ -1209,27 +1217,68 @@ cdev_add_fail:
     unregister_chrdev_region(MKDEV(swd_major, 0), 1);
 
 chrdev_region_fail:
-    gpio_free(_swdio_pin);
+    gpiod_put(_swdio);
 
-swdio_pin_request_fail:
-    gpio_free(_swclk_pin);
+swdio_request_fail:
+    gpiod_put(_swclk);
 
-swclk_pin_request_fail:
+swclk_request_fail:
     return ret;
 }
 
-static void __exit swd_exit(void)
+static int swd_remove(struct platform_device *pdev)
 {
-    pr_info("%s: [%s] %d exit start\n", SWDDEV_NAME, __func__, __LINE__);
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
     
-    gpio_free(_swdio_pin);
-    gpio_free(_swclk_pin);
+    gpiod_put(_swdio);
+    gpiod_put(_swclk);
     device_destroy(cls, MKDEV(swd_major, 0));
     class_destroy(cls);
     cdev_del(&swd_dev.cdev);
     unregister_chrdev_region(MKDEV(swd_major, 0), 1);
 
-    pr_info("%s: [%s] %d exit finished\n", SWDDEV_NAME, __func__, __LINE__);
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
+
+    return 0;
+}
+
+static struct of_device_id swd_driver_ids[] = {
+    {.compatible = "swd,remoteproc"},
+    {}
+};
+MODULE_DEVICE_TABLE(of, swd_driver_ids);
+
+static struct platform_driver swd_driver = {
+    .probe = swd_probe,
+    .remove = swd_remove,
+    .driver = {
+        .name = "swd",
+        .of_match_table = swd_driver_ids,
+    },
+};
+
+static int __init swd_init(void)
+{
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
+
+    if(platform_driver_register(&swd_driver)) {
+        pr_err("%s: [%s] %d Err with platform_driver_register\n", SWDDEV_NAME, __func__, __LINE__);
+        return -1;
+    }
+
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
+
+    return 0;
+}
+
+static void __exit swd_exit(void)
+{
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
+
+    platform_driver_unregister(&swd_driver);
+
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
+
 }
 
 module_init(swd_init);
