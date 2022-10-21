@@ -1,6 +1,6 @@
 obj-m := swd.o
 
-KERNEL_MAKEFILE_PLACE = /usr/src/linux-headers-5.15.32-v8+
+KERNEL_MAKEFILE_PLACE = /usr/src/linux-headers-$(shell uname -r)
 
 all:
 	make -C $(KERNEL_MAKEFILE_PLACE) M=$(PWD) modules
