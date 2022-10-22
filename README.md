@@ -35,7 +35,6 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 | RPI4 | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
-| BeagleBone-Black | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 
 
 ## Verified function and SBC boards of rpu_sysfs
@@ -43,4 +42,3 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK | OK | OK | OK | OK | OK |
 | RPI4 | OK | OK | OK | OK | OK | OK |
-| BeagleBone-Black | 
