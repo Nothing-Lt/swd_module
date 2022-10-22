@@ -17,8 +17,8 @@
 #define PARK        1
 
 spinlock_t __lock;
-int _swclk_pin = 66;
-int _swdio_pin = 69;
+int _swclk_pin = 27;
+int _swdio_pin = 17;
 
 #define SWCLK_SET(v) gpio_direction_output(_swclk_pin, v)
 #define SWDIO_SET(v) gpio_direction_output(_swdio_pin, v)
