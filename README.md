@@ -19,4 +19,4 @@ A kernel module to program Cortex-M3 MCU (*bluepill* is tried) by emulating [ARM
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
 | RPI4 | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
-| BeagleBone-Black | OK | OK | OK | OK | OK | OK | OK | OK | OK | OK |
+
