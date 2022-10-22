@@ -27,8 +27,8 @@ static int swd_major = 0;
 
 static spinlock_t __lock;
 static atomic_t open_lock = ATOMIC_INIT(1);
-static int _swclk_pin = 66;
-static int _swdio_pin = 69;
+static int _swclk_pin = 27;
+static int _swdio_pin = 17;
 
 enum SWDIO_DIR {
     SWD_OUT = 0,
