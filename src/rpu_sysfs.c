@@ -11,7 +11,7 @@
 extern atomic_t open_lock;
 
 extern struct class *cls;
-extern struct device *dev;
+extern struct device *swd_device;
 static struct device *rpu_dev;
 
 int rpu_status = RPU_STATUS_UNHALT;
@@ -275,7 +275,7 @@ int rpu_sysfs_init(void)
     device_initialize(rpu_dev);
     rpu_dev->class = cls;
     rpu_dev->type = &rpu_sysfs;
-    rpu_dev->parent = dev;
+    rpu_dev->parent = swd_device;
     rpu_dev->groups = rpu_dev_groups;
     rpu_dev->release = rpu_sysfs_release;
 

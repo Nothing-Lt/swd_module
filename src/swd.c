@@ -3,6 +3,7 @@
 #include <linux/cdev.h>
 #include <linux/spinlock.h>
 #include <linux/gpio.h>
+#include <linux/platform_device.h>
 
 #include "swd.h"
 #include "lib_swd.h"
@@ -15,12 +16,12 @@ static struct swd_dev
     u32 ope_base;
 } swd_dev;
 struct class *cls;
-struct device *dev;
+struct device *swd_device;
 static int swd_major = 0;
 
 extern spinlock_t __lock;
-extern int _swclk_pin;
-extern int _swdio_pin;
+extern struct gpio_desc *_swclk;
+extern struct gpio_desc *_swdio;
 
 extern int rpu_status;
 
@@ -210,23 +211,30 @@ static struct file_operations fops = {
     .unlocked_ioctl = swd_ioctl
 };
 
-static int __init swd_init(void)
+static int swd_probe(struct platform_device *pdev)
 {
+    struct device *dev = &pdev->dev;
     dev_t devid;
     int ret;
 
     pr_info("%s: [%s] %d probe start\n", SWDDEV_NAME, __func__, __LINE__);
 
+    _swclk = devm_gpiod_get(dev, "swclk", GPIOD_OUT_LOW);
+    if (IS_ERR(_swclk)) {
+        pr_err("%s [%s] %d Err with get swclk\n", SWDDEV_NAME, __func__, __LINE__);
+        ret = PTR_ERR(_swclk);
+        goto swclk_request_fail;
+    }
+
+    _swdio = devm_gpiod_get(dev, "swdio", GPIOD_OUT_LOW);
+    if (IS_ERR(_swdio)) {
+        pr_err("%s [%s] %d Err with get swdio\n", SWDDEV_NAME, __func__, __LINE__);
+        ret = PTR_ERR(_swdio);
+        goto swdio_request_fail;
+    }
+
     cdev_init(&swd_dev.cdev, &fops);
     swd_dev.cdev.owner = THIS_MODULE;
-    
-    ret = gpio_request(_swclk_pin, NULL);
-    if (ret < 0)
-        goto swclk_pin_request_fail;
-
-    ret = gpio_request(_swdio_pin, NULL);
-    if (ret < 0)
-        goto swdio_pin_request_fail;
 
     if (swd_major) {
         ret = register_chrdev_region(MKDEV(swd_major, 0), 1, SWDDEV_NAME);
@@ -245,8 +253,8 @@ static int __init swd_init(void)
     if (!cls)
         goto class_create_fail;
 
-    dev = device_create(cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
-    if (!dev)
+    swd_device = device_create(cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
+    if (!swd_device)
         goto device_create_fail;
 
     ret = rpu_sysfs_init();
@@ -268,28 +276,69 @@ cdev_add_fail:
     unregister_chrdev_region(MKDEV(swd_major, 0), 1);
 
 chrdev_region_fail:
-    gpio_free(_swdio_pin);
+    gpiod_put(_swdio);
 
-swdio_pin_request_fail:
-    gpio_free(_swclk_pin);
+swdio_request_fail:
+    gpiod_put(_swclk);
 
-swclk_pin_request_fail:
+swclk_request_fail:
     return ret;
 }
 
-static void __exit swd_exit(void)
+static int swd_remove(struct platform_device *pdev)
 {
     pr_info("%s: [%s] %d exit start\n", SWDDEV_NAME, __func__, __LINE__);
     
     rpu_sysfs_exit();
-    gpio_free(_swdio_pin);
-    gpio_free(_swclk_pin);
+    gpiod_put(_swdio);
+    gpiod_put(_swclk);
     device_destroy(cls, MKDEV(swd_major, 0));
     class_destroy(cls);
     cdev_del(&swd_dev.cdev);
     unregister_chrdev_region(MKDEV(swd_major, 0), 1);
 
     pr_info("%s: [%s] %d exit finished\n", SWDDEV_NAME, __func__, __LINE__);
+
+    return 0;
+}
+
+static struct of_device_id swd_driver_ids[] = {
+    {.compatible = "swd.remoteproc"},
+    {}
+};
+MODULE_DEVICE_TABLE(of, swd_driver_ids);
+
+static struct platform_driver swd_driver = {
+    .probe = swd_probe,
+    .remove = swd_remove,
+    .driver = {
+        .name = "swd",
+        .of_match_table = swd_driver_ids,
+    },
+};
+
+static int __init swd_init(void)
+{
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
+
+    if (platform_driver_register(&swd_driver)) {
+        pr_err("%s: [%s] %d Err with platform_driver_register\n", SWDDEV_NAME, __func__, __LINE__);
+        return -1;
+    }
+
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
+
+    return 0;
+}
+
+static void __exit swd_exit(void)
+{
+    pr_info("%s: [%s] %d start\n", SWDDEV_NAME, __func__, __LINE__);
+
+    platform_driver_unregister(&swd_driver);
+
+    pr_info("%s: [%s] %d finished\n", SWDDEV_NAME, __func__, __LINE__);
+
 }
 
 module_init(swd_init);

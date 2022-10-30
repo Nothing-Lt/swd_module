@@ -17,14 +17,14 @@
 #define PARK        1
 
 spinlock_t __lock;
-int _swclk_pin = 27;
-int _swdio_pin = 17;
+struct gpio_desc *_swclk;
+struct gpio_desc *_swdio;
 
-#define SWCLK_SET(v) gpio_direction_output(_swclk_pin, v)
-#define SWDIO_SET(v) gpio_direction_output(_swdio_pin, v)
-#define SWDIO_SET_DIR(dir)  {if (dir) {gpio_direction_input(_swdio_pin);} \
-                            else {gpio_direction_output(_swdio_pin, 1);}}
-#define SWDIO_GET(v) gpio_get_value(_swdio_pin)
+#define SWCLK_SET(v) gpiod_direction_output(_swclk, v)
+#define SWDIO_SET(v) gpiod_direction_output(_swdio, v)
+#define SWDIO_SET_DIR(dir)  {if (dir) {gpiod_direction_input(_swdio);} \
+                            else {gpiod_direction_output(_swdio, 1);}}
+#define SWDIO_GET(v) gpiod_get_value(_swdio)
 
 static inline void _delay(unsigned long long time_out)
 {
