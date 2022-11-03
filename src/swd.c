@@ -10,13 +10,8 @@
 #include "rpu_sysfs.h"
 #include "../include/swd_module.h"
 
-static struct swd_dev
-{
-    struct cdev cdev;
-    u32 ope_base;
-} swd_dev;
-struct class *cls;
-struct device *swd_device;
+static struct swd_device swd_dev;
+
 static int swd_major = 0;
 
 extern spinlock_t __lock;
@@ -78,7 +73,7 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     char *buf;
     unsigned long len_to_cpy;
     unsigned long read_len;
-    struct swd_dev *dev = (struct swd_dev*)(filp->private_data);
+    struct swd_device *dev = (struct swd_device*)(filp->private_data);
 
     pr_info("%s: [%s] %d read start\n", SWDDEV_NAME, __func__, __LINE__);
 
@@ -125,7 +120,7 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     long ret = 0;
     char *buf = NULL;
     struct swd_parameters params;
-    struct swd_dev *dev = (struct swd_dev*)(filp->private_data);
+    struct swd_device *dev = (struct swd_device*)(filp->private_data);
 
     pr_info("%s: [%s] %d ioctl start\n", SWDDEV_NAME, __func__, __LINE__);
 
@@ -249,17 +244,19 @@ static int swd_probe(struct platform_device *pdev)
     if (ret != 0)
         goto cdev_add_fail;
 
-    cls = class_create(THIS_MODULE, SWDDEV_NAME);
-    if (!cls)
+    swd_dev.cls = class_create(THIS_MODULE, SWDDEV_NAME);
+    if (!swd_dev.cls)
         goto class_create_fail;
 
-    swd_device = device_create(cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
-    if (!swd_device)
+    swd_dev.dev = device_create(swd_dev.cls, NULL, MKDEV(swd_major,0), NULL, SWDDEV_NAME);
+    if (!swd_dev.dev)
         goto device_create_fail;
 
-    ret = rpu_sysfs_init();
+    ret = rpu_sysfs_init(&swd_dev);
     if (ret)
         goto rpu_sysfs_init_fail;
+
+    platform_set_drvdata(pdev, &swd_dev);
 
     spin_lock_init(&__lock);
     pr_info("%s: [%s] %d probe finished\n", SWDDEV_NAME, __func__, __LINE__);
@@ -267,7 +264,7 @@ static int swd_probe(struct platform_device *pdev)
 
 rpu_sysfs_init_fail:
 device_create_fail:
-    class_destroy(cls);
+    class_destroy(swd_dev.cls);
 
 class_create_fail:
     cdev_del(&swd_dev.cdev);
@@ -287,14 +284,16 @@ swclk_request_fail:
 
 static int swd_remove(struct platform_device *pdev)
 {
+    struct swd_device *swd_dev = (struct swd_device*)platform_get_drvdata(pdev);
+
     pr_info("%s: [%s] %d exit start\n", SWDDEV_NAME, __func__, __LINE__);
-    
-    rpu_sysfs_exit();
+
+    rpu_sysfs_exit(swd_dev);
     gpiod_put(_swdio);
     gpiod_put(_swclk);
-    device_destroy(cls, MKDEV(swd_major, 0));
-    class_destroy(cls);
-    cdev_del(&swd_dev.cdev);
+    device_destroy(swd_dev->cls, MKDEV(swd_major, 0));
+    class_destroy(swd_dev->cls);
+    cdev_del(&swd_dev->cdev);
     unregister_chrdev_region(MKDEV(swd_major, 0), 1);
 
     pr_info("%s: [%s] %d exit finished\n", SWDDEV_NAME, __func__, __LINE__);
