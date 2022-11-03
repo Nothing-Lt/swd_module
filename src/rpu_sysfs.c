@@ -10,8 +10,6 @@
 
 extern atomic_t open_lock;
 
-extern struct class *cls;
-extern struct device *dev;
 static struct device *rpu_dev;
 
 int rpu_status = RPU_STATUS_UNHALT;
@@ -260,7 +258,7 @@ static void rpu_sysfs_release(struct device *dev)
     // kfree(dev);
 }
 
-int rpu_sysfs_init(void)
+int rpu_sysfs_init(struct swd_device *swd_dev)
 {
     int ret;
 
@@ -273,9 +271,9 @@ int rpu_sysfs_init(void)
     }
 
     device_initialize(rpu_dev);
-    rpu_dev->class = cls;
+    rpu_dev->class = swd_dev->cls;
     rpu_dev->type = &rpu_sysfs;
-    rpu_dev->parent = dev;
+    rpu_dev->parent = swd_dev->dev;
     rpu_dev->groups = rpu_dev_groups;
     rpu_dev->release = rpu_sysfs_release;
 
@@ -296,7 +294,7 @@ dev_set_name_fail:
     return ret;
 }
 
-void rpu_sysfs_exit(void)
+void rpu_sysfs_exit(struct swd_device *swd_dev)
 {
     pr_info("%s: [%s] start\n", RPUDEV_NAME, __func__);
 
