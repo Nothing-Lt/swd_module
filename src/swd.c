@@ -7,7 +7,7 @@
 
 #include "../include/swd_module.h"
 
-#define SWDDEV_NAME "swd" 
+#define SWDDEV_NAME "swd"
 
 #define SWD_RESET_LEN 50
 #define SWD_DELAY   (1000000000UL / 2000)
@@ -60,7 +60,7 @@ enum SWD_REGS {
     SWD_DP_SELECT_REG   = 0x8,
     SWD_DP_RDBUFF_REG   = 0xC,
 
-    // AP regs       
+    // AP regs
     SWD_AP_CSW_REG  = 0x0,
     SWD_AP_TAR_REG  = 0x4,
     SWD_AP_DRW_REG  = 0xC,
@@ -88,7 +88,7 @@ enum SWD_REGS {
 #define SWD_STKCMPCLR_MSK   BIT(SWD_STKCMPCLR_OFF)
 #define SWD_DABABORT_MSK    BIT(SWD_DAPABORT_OFF)
 
-#define SWD_CSYSPWRUPREQ_OFF    30 
+#define SWD_CSYSPWRUPREQ_OFF    30
 #define SWD_CDBGPWRUPREQ_OFF    28
 #define SWD_WDATAERR_OFF        7
 #define SWD_STICKYERR_OFF       5
@@ -270,7 +270,7 @@ static u8 _swd_send(u8 APnDP, u8 RnW, u8 A, u32 data, bool handle_err)
     cmd = (PARK << 7) | START;
 
     // 2. APnDP
-    // 3. RnW    
+    // 3. RnW
     cmd = cmd | (APnDP << 1) | (RnW << 2);
 
     // 4. A[2:3]
@@ -321,7 +321,7 @@ static u8 _swd_read(u8 APnDP, u8 RnW, u8 A, u32 *data, bool handle_err)
     cmd = (PARK << 7) | START;
 
     // 2. APnDP
-    // 3. RnW    
+    // 3. RnW
     cmd = cmd | (APnDP << 1) | (RnW << 2);
 
     // 4. A[2:3]
@@ -382,17 +382,17 @@ static void inline __fault_err_handling(void)
     if (ctrlstat_val & SWD_STICKYERR_MSK)
         abort_val |= SWD_STKERRCLR_MSK;
 
-    if (ctrlstat_val & SWD_WDATAERR_MSK) 
+    if (ctrlstat_val & SWD_WDATAERR_MSK)
         abort_val |= SWD_WDERRCLR_MSK;
 
-    if (ctrlstat_val & SWD_STICKYORUN_MSK) 
+    if (ctrlstat_val & SWD_STICKYORUN_MSK)
         abort_val |= SWD_ORUNERRCLR_MSK;
 
     pr_info("%s: [%s] %d abort_val:%08x\n", SWDDEV_NAME, __func__, __LINE__, abort_val);
     _swd_send(SWD_DP, SWD_WRITE, SWD_DP_ABORT_REG, abort_val, false);
 
     // after clear the wdataerr bit, reset the line and read the idcode
-    if (ctrlstat_val & SWD_WDATAERR_MSK) {     
+    if (ctrlstat_val & SWD_WDATAERR_MSK) {
         _swd_jtag_to_swd();
         _swd_read(SWD_DP, SWD_READ, SWD_DP_IDCODE_REG, &abort_val, false);
     }
@@ -405,7 +405,7 @@ static void _swd_fault_handling(u8 ack)
         pr_err("%s: [%s] %d wait\n", SWDDEV_NAME, __func__, __LINE__);
         __wait_handling();
     break;
-    case SWD_FAULT: // for fault 
+    case SWD_FAULT: // for fault
     default: // for protocol error
         pr_err("%s: [%s] %d fault ack:%d\n", SWDDEV_NAME, __func__, __LINE__, ack);
         __fault_err_handling();
@@ -449,7 +449,7 @@ static ssize_t _swd_ap_read(void* to, u32 base, const ssize_t len)
 
     _swd_read(SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &data, true);
     buf[i] = data;
-  
+
     return (++i) * 4;
 }
 
@@ -499,7 +499,7 @@ static int _swd_halt_core(void)
         pr_err("%s: [%s] %d read swd ap_csw failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
     }
- 
+
     // enable the auto increment
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
     if (ack != SWD_OK) {
@@ -550,7 +550,7 @@ static int _swd_halt_core(void)
         pr_err("%s: [%s] %d write swd ap_tar failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
     }
-    
+
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
@@ -587,7 +587,7 @@ static int _swd_halt_core(void)
         pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
     }
- 
+
     // CTRL1.core_reset_ap = 0
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_IDR_REG & 0xF0, true);
     if (ack != SWD_OK) {
@@ -600,7 +600,7 @@ static int _swd_halt_core(void)
         pr_err("%s: [%s] %d write swd ap_drw failed\n", SWDDEV_NAME, __func__, __LINE__);
         return -ENODEV;
     }
- 
+
     // Select MEM BANK 0
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_MEMAP_BANK_0 & 0xF0, true);
     if (ack != SWD_OK) {
@@ -665,7 +665,7 @@ static int _swd_init(void)
     int retry = RETRY;
 
     _swd_jtag_to_swd();
-    
+
     // Read IDCODE to wakeup the device
     ack = _swd_read(SWD_DP, SWD_READ, SWD_DP_IDCODE_REG, &data, true);
     if (ack != SWD_OK) {
@@ -816,11 +816,11 @@ static void _swd_erase_flash_page(u32 base, u32 len)
     _swd_ap_read(&data, FLASH_CR, sizeof(u32));
     data |= FLASH_CR_PER_MSK;
     _swd_ap_write(&data, FLASH_CR, sizeof(u32));
-    
+
     // 2. write address to FAR
     if (len % RAM_PAGE_SIZE)
         page_len = (len / RAM_PAGE_SIZE) + 1;
-    else 
+    else
         page_len = len / RAM_PAGE_SIZE;
     for (i = 0 ; i < page_len ; i++) {
         _swd_ap_write(&base, FLASH_AR, sizeof(u32));
@@ -829,8 +829,8 @@ static void _swd_erase_flash_page(u32 base, u32 len)
         _swd_ap_read(&data, FLASH_CR, sizeof(u32));
         data |= FLASH_CR_STRT_MSK;
         _swd_ap_write(&data, FLASH_CR, sizeof(u32));
-    
-        // 4. wait until FLASH_SR_BSY to 0    
+
+        // 4. wait until FLASH_SR_BSY to 0
         retry = RETRY;
         do {
             _delay(SWD_DELAY);
@@ -887,10 +887,10 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
         pr_err("%s: [%s] %d read csw fail\n", SWDDEV_NAME, __func__, __LINE__);
     }
 
-    data = old_csw & (~0x37); // clear addrinc and size filed 
+    data = old_csw & (~0x37); // clear addrinc and size filed
     data |= 0x21; // set the  addrinc to be 0b10, and size to be 0b0001
 
-    // set new AP_CSW 
+    // set new AP_CSW
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d write swd select failed\n", SWDDEV_NAME, __func__, __LINE__);
@@ -930,7 +930,7 @@ static int _swd_program_flash(void *from, u32 base, u32 len)
     cur_base = base;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(&data, cur_base, sizeof(u32));
-        if (data != buf[i]) 
+        if (data != buf[i])
             err += 4;
 
         cur_base += sizeof(u32);
@@ -960,13 +960,13 @@ int _swd_write_ram(void* from, u32 base, u32 len)
 
     // write data to ram
     _swd_ap_write(buf, base, len);
-        
+
     // verify
     err = 0;
     cur_base = base;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(&data, cur_base, sizeof(u32));
-        if (data != buf[i]) 
+        if (data != buf[i])
             err += 4;
 
         cur_base += sizeof(u32);
@@ -1012,7 +1012,7 @@ static int swd_release(struct inode *inode, struct file* filp)
     pr_info("%s: [%s] %d release start\n", SWDDEV_NAME, __func__, __LINE__);
 
     atomic_inc(&open_lock);
-    
+
     pr_info("%s: [%s] %d release finished\n", SWDDEV_NAME, __func__, __LINE__);
 
     return 0;
@@ -1023,8 +1023,8 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     int ret;
     u32 base;
     char *buf;
-    unsigned long len_to_cpy;
-    unsigned long read_len;
+    ssize_t len_to_cpy;
+    ssize_t read_len;
     struct swd_dev *dev = (struct swd_dev*)(filp->private_data);
 
     pr_info("%s: [%s] %d read start\n", SWDDEV_NAME, __func__, __LINE__);
@@ -1039,8 +1039,10 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     base = dev->ope_base;
     do {
         read_len = _swd_ap_read(buf + len_to_cpy, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
-        if (IS_ERR_VALUE(read_len))
-            return -1;
+        if (read_len < 0) {
+            goto swd_ap_read_fault;
+            len_to_cpy = -1;
+        }
 
         len_to_cpy += read_len;
         base += read_len;
@@ -1051,6 +1053,7 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     if (ret)
         return ret;
 
+swd_ap_read_fault:
     kfree(buf);
 
     pr_info("%s: [%s] %d read finished\n", SWDDEV_NAME, __func__, __LINE__);
@@ -1168,7 +1171,7 @@ static int __init swd_init(void)
 
     cdev_init(&swd_dev.cdev, &fops);
     swd_dev.cdev.owner = THIS_MODULE;
-    
+
     ret = gpio_request(_swclk_pin, NULL);
     if (ret < 0)
         goto swclk_pin_request_fail;
@@ -1224,7 +1227,7 @@ swclk_pin_request_fail:
 static void __exit swd_exit(void)
 {
     pr_info("%s: [%s] %d exit start\n", SWDDEV_NAME, __func__, __LINE__);
-    
+
     gpio_free(_swdio_pin);
     gpio_free(_swclk_pin);
     device_destroy(cls, MKDEV(swd_major, 0));
