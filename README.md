@@ -34,11 +34,11 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Reset line | Test Alive | Read IDCODE | Read DP REG | Write DP REG | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  |
-| RPI4 |   |   |   |   |   |   |   |   |   |   |
+| RPI4 | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  | OK  |
 
 
 ## Verified function and SBC boards of rpu_sysfs
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | OK  | OK  | OK  | OK  | OK  | OK  |
-| RPI4 |   |   |   |   |   |   |
+| RPI4 | OK  | OK  | OK  | OK  | OK  | OK  |

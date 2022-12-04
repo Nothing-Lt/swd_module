@@ -60,7 +60,7 @@ static int swd_release(struct inode *inode, struct file* filp)
     pr_info("%s: [%s] %d release start\n", SWDDEV_NAME, __func__, __LINE__);
 
     atomic_inc(&open_lock);
-    
+
     pr_info("%s: [%s] %d release finished\n", SWDDEV_NAME, __func__, __LINE__);
 
     return 0;
@@ -71,8 +71,8 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     int ret;
     u32 base;
     char *buf;
-    unsigned long len_to_cpy;
-    unsigned long read_len;
+    ssize_t len_to_cpy;
+    ssize_t read_len;
     struct swd_device *dev = (struct swd_device*)(filp->private_data);
 
     pr_info("%s: [%s] %d read start\n", SWDDEV_NAME, __func__, __LINE__);
@@ -87,6 +87,9 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     base = dev->ope_base;
     do {
         read_len = _swd_ap_read(buf + len_to_cpy, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
+        if (read_len < 0)
+            return read_len;
+
         len_to_cpy += read_len;
         base += read_len;
         len -= read_len;

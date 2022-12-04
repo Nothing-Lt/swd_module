@@ -16,15 +16,18 @@ int rpu_status = RPU_STATUS_UNHALT;
 
 static ssize_t _rpu_xxx_read(char *buf, loff_t off, size_t count)
 {
-    u32 len;
-    u32 len_to_read;
     u32 pos;
+    ssize_t len;
+    ssize_t len_to_read;
 
     pos = 0;
     len_to_read = count;
     do {
         len = _swd_ap_read(&(buf[pos]), off + pos, 
                         (len_to_read > SWD_BANK_SIZE) ? SWD_BANK_SIZE : len_to_read);
+        if (len < 0)
+            return -1;
+
         pos += len;
         len_to_read -= len;
     } while(len_to_read);
@@ -87,9 +90,9 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,struct 
         _swd_init();
         _swd_halt_core();
     }
-    
+
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
-    
+
     atomic_inc(&open_lock);
 
     return count;
@@ -114,7 +117,10 @@ static ssize_t rpu_flash_read(struct file *filp, struct kobject *kobj,struct bin
 
     pr_info("%s [%s] start\n",RPUDEV_NAME, __func__);
 
-    _rpu_xxx_read(buf, SWD_FLASH_BASE + off, count);
+    if (_rpu_xxx_read(buf, SWD_FLASH_BASE + off, count) < 0) {
+        count = -1;
+        goto rpu_status_unhalt;
+    }
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
@@ -138,18 +144,21 @@ static ssize_t rpu_flash_write(struct file *filp, struct kobject *kobj, struct b
 
     if (rpu_status != RPU_STATUS_HALT)
         goto rpu_status_unhalt;
-    
+
     pos = 0;
     len_to_write = count;
     do {
         len = (len_to_write > FLASH_PAGE_SIZE) ? FLASH_PAGE_SIZE : len_to_write;
         err = _swd_program_flash(&(buf[pos]), SWD_FLASH_BASE + off + pos, len);
-        if (err)
-            continue;
+        if (err) {
+            count = -1;
+            goto rpu_status_unhalt;
+        }
+        
         len_to_write -= len;
         pos += len;
     } while(len_to_write);
-    
+
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
 rpu_status_unhalt:
@@ -178,7 +187,10 @@ static ssize_t rpu_ram_read(struct file *filp, struct kobject *kobj,struct bin_a
 
     pr_info("%s [%s] start\n",RPUDEV_NAME, __func__);
 
-    _rpu_xxx_read(buf, SWD_RAM_BASE + off, count);
+    if (_rpu_xxx_read(buf, SWD_RAM_BASE + off, count) < 0) {
+        count = -1;
+        goto rpu_status_unhalt;
+    }
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
@@ -210,8 +222,11 @@ static ssize_t rpu_ram_write(struct file *filp, struct kobject *kobj, struct bin
     do {
         len = (len_to_write > RAM_PAGE_SIZE) ? RAM_PAGE_SIZE : len_to_write;
         err = _swd_write_ram(&(buf[pos]), SWD_RAM_BASE + off + pos, len);
-        if (err)
-            continue;
+        if (err) {
+            count = -1;
+            goto rpu_status_unhalt;
+        }
+
         len_to_write -= len;
         pos += len;
     } while(len_to_write);
