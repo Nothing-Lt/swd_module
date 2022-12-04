@@ -1040,8 +1040,8 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     do {
         read_len = _swd_ap_read(buf + len_to_cpy, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
         if (read_len < 0) {
-            goto swd_ap_read_fault;
             len_to_cpy = -1;
+            goto swd_ap_read_fault;
         }
 
         len_to_cpy += read_len;
