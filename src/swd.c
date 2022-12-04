@@ -424,19 +424,19 @@ static ssize_t _swd_ap_read(void* to, u32 base, const ssize_t len)
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, base, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_read(SWD_AP, SWD_READ, SWD_AP_DRW_REG & 0xC, &data, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d ack:%d\n", SWDDEV_NAME, __func__, __LINE__, ack);
-        return 0;
+        return -ENODEV;
     }
 
     for (i = 0 ; i < len_to_read-1 ; i++) {
@@ -464,13 +464,13 @@ static ssize_t _swd_ap_write(void *from, u32 base, u32 len)
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, base, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     for (i = 0 ; i < len_to_write ; i++) {
@@ -1024,8 +1024,8 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     int ret;
     u32 base;
     char *buf;
-    unsigned long len_to_cpy;
-    unsigned long read_len;
+    ssize_t len_to_cpy;
+    ssize_t read_len;
     struct swd_dev *dev = (struct swd_dev*)(filp->private_data);
 
     pr_info("%s: [%s] %d read start\n", SWDDEV_NAME, __func__, __LINE__);
@@ -1040,6 +1040,11 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     base = dev->ope_base;
     do {
         read_len = _swd_ap_read(buf + len_to_cpy, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
+        if (read_len < 0) {
+            len_to_cpy = -1;
+            goto swd_ap_read_fault;
+        }
+
         len_to_cpy += read_len;
         base += read_len;
         len -= read_len;
@@ -1049,6 +1054,7 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     if (ret)
         return ret;
 
+swd_ap_read_fault:
     kfree(buf);
 
     pr_info("%s: [%s] %d read finished\n", SWDDEV_NAME, __func__, __LINE__);
