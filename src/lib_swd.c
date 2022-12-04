@@ -308,19 +308,19 @@ ssize_t _swd_ap_read(void* to, u32 base, const ssize_t len)
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, base, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_read(SWD_AP, SWD_READ, SWD_AP_DRW_REG & 0xC, &data, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d ack:%d\n", SWDDEV_NAME, __func__, __LINE__, ack);
-        return 0;
+        return -ENODEV;
     }
 
     for (i = 0 ; i < len_to_read-1 ; i++) {
@@ -348,13 +348,13 @@ ssize_t _swd_ap_write(void *from, u32 base, u32 len)
     ack = _swd_send(SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     ack = _swd_send(SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, base, true);
     if (ack != SWD_OK) {
         pr_err("%s: [%s] %d select first AP bank fail\n", SWDDEV_NAME, __func__, __LINE__);
-        return 0;
+        return -ENODEV;
     }
 
     for (i = 0 ; i < len_to_write ; i++) {
