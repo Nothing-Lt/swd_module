@@ -775,6 +775,7 @@ static void _swd_lock_flash(void)
 static void _swd_erase_flash_all(void)
 {
     u32 data;
+    int retry;
 
     if(_swd_unlock_flash()) {
         pr_err("%s [%s] Unable to unlock flash\n", SWDDEV_NAME, __func__);
@@ -791,11 +792,12 @@ static void _swd_erase_flash_all(void)
     data |= FLASH_CR_STRT_MSK;
     _swd_ap_write(&data, FLASH_CR, sizeof(u32));
 
+    retry = RETRY;
     do {
         _delay(SWD_DELAY);
         _swd_ap_read(&data, FLASH_SR, sizeof(u32));
     }
-    while(data & FLASH_SR_BSY_MSK);
+    while((retry--) && (data & FLASH_SR_BSY_MSK));
 
     // Clear MER
     _swd_ap_read(&data, FLASH_CR, sizeof(u32));
