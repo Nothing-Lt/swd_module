@@ -15,8 +15,8 @@ A kernel module to program Cortex-M3 MCU (*bluepill* is tried) by emulating [ARM
 
 ## Verified function and SBC boards
 
-|     | Reset line | Test Alive | Read IDCODE | Read DP REG | Write DP REG | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
-| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| RPI3-B+ |   |   |   |   |   |   |   |   |   |   |
+|     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | ok |
 | RPI4 |    |    |    |    |    |    |    |    |    |    |
 
