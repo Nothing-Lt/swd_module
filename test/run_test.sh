@@ -8,18 +8,6 @@ echo "============== main(read default) =============="
 ./main
 echo ""
 
-echo "============== Set Base =============="
-./main_setbase
-echo ""
-
-echo "============== Read DP =============="
-./main_read_dp
-echo ""
-
-echo "============== Write DP =============="
-./main_write_dp
-echo ""
-
 echo "============== RAM Download =============="
 ./main_ram_download
 echo ""

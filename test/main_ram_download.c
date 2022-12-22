@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
     int i;
     int fd = -1;
-    uint32_t base;
+    uint32_t offset;
     uint32_t buf_ori[BUFSIZ/8];
     uint32_t buf_result[BUFSIZ/8];
     struct swd_parameters params;
@@ -36,11 +36,11 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    base = 0x20000000;
+    offset = 0;
     for (i=0 ; i < (BUFSIZ/8)/(RAM_PAGE_SIZE/4) ; i++) {
         // Download to RAM
         params.arg[0] = (unsigned long)&(buf_ori[i*(RAM_PAGE_SIZE/4)]);
-        params.arg[1] = base;
+        params.arg[1] = offset;
         params.arg[2] = RAM_PAGE_SIZE;
         if (ioctl(fd, SWDDEV_IOC_DWNLDSRAM, &params)) {
             i--;
@@ -48,13 +48,11 @@ int main(int argc, char **argv)
         }
 
         printf("Programmed -%d/%d-\n", i+1, (BUFSIZ/8)/(RAM_PAGE_SIZE/4));
-        base += RAM_PAGE_SIZE;
+        offset += RAM_PAGE_SIZE;
     }
 
-
     // Set the read base to RAM
-    params.arg[0] = 0x20000000;
-    ioctl(fd, SWDDEV_IOC_SETBASE, &params);
+    lseek(fd, 0x20000000, SEEK_SET);
 
     // Read and verify
     read(fd, buf_result, sizeof(buf_result));
@@ -68,10 +66,6 @@ int main(int argc, char **argv)
         }
         printf("Err, Verify programmed data failed\n");
     }
-
-    // Restore to the Flash's base address
-    params.arg[0] = 0x08000000;
-    ioctl(fd, SWDDEV_IOC_SETBASE, &params);
 
     close(fd);
 

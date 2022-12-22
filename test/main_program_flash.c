@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
     int i;
     int fd = -1;
-    uint32_t base;
+    uint32_t offset;
     uint32_t buf_size;
     uint32_t file_size;
     FILE *fp = NULL;
@@ -54,11 +54,11 @@ int main(int argc, char **argv)
     fread(buf, sizeof(uint32_t), file_size/sizeof(uint32_t), fp);
 
     // write to flash
-    base = 0x08000000;
+    offset = 0;
     for (i=0 ; i < buf_size/FLASH_PAGE_SIZE ; i++) {
         // Download to Flash
         params.arg[0] = ((unsigned long)buf) + (i * FLASH_PAGE_SIZE);
-        params.arg[1] = base;
+        params.arg[1] = offset;
         params.arg[2] = FLASH_PAGE_SIZE;
         if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
             i--;
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         }
 
         printf("Programmed -%d/%d-\n", i+1, buf_size/FLASH_PAGE_SIZE);
-        base += FLASH_PAGE_SIZE;
+        offset += FLASH_PAGE_SIZE;
     }
 
     printf("Flash program finished\n");

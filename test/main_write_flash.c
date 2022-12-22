@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 {
     int i;
     int fd = -1;
-    uint32_t base;
+    uint32_t offset;
     uint32_t buf_ori[BUFSIZ];
     uint32_t buf_result[BUFSIZ];
     struct swd_parameters params;
@@ -37,11 +37,11 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    base = 0x08000000;
+    offset = 0;
     for (i=0 ; i < BUFSIZ/(FLASH_PAGE_SIZE/4) ; i++) {
         // Download to Flash
         params.arg[0] = (unsigned long)&(buf_ori[i*(FLASH_PAGE_SIZE/4)]);
-        params.arg[1] = base;
+        params.arg[1] = offset;
         params.arg[2] = FLASH_PAGE_SIZE;
         if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
             i--;
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         }
 
         printf("Programmed -%d/%d-\n", i+1, BUFSIZ/(FLASH_PAGE_SIZE/4));
-        base += FLASH_PAGE_SIZE;
+        offset += FLASH_PAGE_SIZE;
     }
 
     // Read and verify

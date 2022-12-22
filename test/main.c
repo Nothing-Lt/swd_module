@@ -16,6 +16,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    fseek(f, 0x20000000, SEEK_SET);
     fread(buf, BUFSIZ, sizeof(uint32_t), f);
 
     for (i=0;i<BUFSIZ;i++) {
