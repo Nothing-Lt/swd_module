@@ -16,6 +16,7 @@
 static struct swd_dev
 {
     struct cdev cdev;
+    struct rproc_core *rc;
 } swd_dev;
 static struct class *cls;
 static struct device *dev;
@@ -26,7 +27,6 @@ static atomic_t open_lock = ATOMIC_INIT(1);
 static int _swclk_pin = 27;
 static int _swdio_pin = 17;
 
-extern struct swd_gpio stm32f10xx_sg;
 extern struct rproc_core stm32f10xx_rc;
 
 static inline void _delay(unsigned long long time_out)
@@ -67,11 +67,26 @@ static inline void signal_end (void) {
     spin_unlock_irq(&__lock);
 }
 
+// setup the gpio level things
+struct swd_gpio stm32f10xx_sg = {
+    .signal_begin = signal_begin,
+    .signal_end = signal_end,
+    .SWCLK_SET = SWCLK_SET,
+    .SWDIO_DIR_IN = SWDIO_DIR_IN,
+    .SWDIO_DIR_OUT = SWDIO_DIR_OUT,
+    .SWDIO_SET = SWDIO_SET,
+    .SWDIO_GET = SWDIO_GET,
+    ._delay = delay
+};
+
 static int swd_open(struct inode *inode, struct file* filp)
 {
     int ret;
+    struct swd_dev *sd = container_of(inode->i_cdev, struct swd_dev, cdev);
+    struct rproc_core *rc = sd->rc;
 
     pr_info("%s: [%s] %d open start\n", SWDDEV_NAME, __func__, __LINE__);
+    pr_err("swd_dev:%016lx, sd:%016lx\n",&swd_dev, sd);
 
     // allow one process to open it.
     if(!atomic_dec_and_test(&open_lock)){
@@ -79,13 +94,13 @@ static int swd_open(struct inode *inode, struct file* filp)
         return -EBUSY;
     }
 
-    ret = stm32f10xx_rc.init();
+    ret = rc->core_init();
     if (ret) {
         pr_err("%s: [%s] %d error with _swd_init\n", SWDDEV_NAME, __func__, __LINE__);
         goto swd_init_fail;
     }
 
-    stm32f10xx_rc.halt_core();
+    rc->halt_core();
 
     filp->f_pos = SWD_FLASH_BASE;
     filp->private_data = &swd_dev;
@@ -101,8 +116,12 @@ swd_init_fail:
 
 static int swd_release(struct inode *inode, struct file* filp)
 {
+    struct swd_dev *sd = (struct swd_dev*)filp->private_data;
+    struct rproc_core *rc = sd->rc;
+
     pr_info("%s: [%s] %d release start\n", SWDDEV_NAME, __func__, __LINE__);
 
+    rc->reset();
     atomic_inc(&open_lock);
 
     pr_info("%s: [%s] %d release finished\n", SWDDEV_NAME, __func__, __LINE__);
@@ -141,6 +160,8 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     char *buf;
     ssize_t len_to_cpy;
     ssize_t read_len;
+    struct swd_dev *sd = (struct swd_dev*)filp->private_data;
+    struct rproc_core *rc = sd->rc;
 
     pr_info("%s: [%s] %d read start\n", SWDDEV_NAME, __func__, __LINE__);
 
@@ -153,7 +174,7 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     len_to_cpy = 0;
     base = filp->f_pos;
     do {
-        read_len = stm32f10xx_rc.read_ram(buf + len_to_cpy, base, len);
+        read_len = rc->read_ram(buf + len_to_cpy, base, len);
         if (read_len < 0) {
             len_to_cpy = -1;
             goto swd_ap_read_fault;
@@ -193,24 +214,26 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     long ret = 0;
     char *buf = NULL;
     struct swd_parameters params;
+    struct swd_dev *sd = (struct swd_dev*)filp->private_data;
+    struct rproc_core *rc = sd->rc;
 
     pr_info("%s: [%s] %d ioctl start\n", SWDDEV_NAME, __func__, __LINE__);
 
     switch(cmd) {
     case SWDDEV_IOC_RSTLN:
-        stm32f10xx_rc.setup_swd();
+        rc->setup_swd();
         break;
     case SWDDEV_IOC_HLTCORE:
-        stm32f10xx_rc.setup_swd();
-        stm32f10xx_rc.halt_core();
+        rc->setup_swd();
+        rc->halt_core();
         break;
     case SWDDEV_IOC_UNHLTCORE:
-        stm32f10xx_rc.unhalt_core();
-        stm32f10xx_rc.reset();
+        rc->unhalt_core();
+        rc->reset();
         break;
     case SWDDEV_IOC_TSTALIVE:
-        stm32f10xx_rc.setup_swd();
-        params.ret = stm32f10xx_rc.test_alive();
+        rc->setup_swd();
+        params.ret = rc->test_alive();
         if(copy_to_user((void*)arg, &params, sizeof(struct swd_parameters)))
             return -EFAULT;
         break;
@@ -224,7 +247,7 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             kfree(buf);
             return -EFAULT;
         }
-        ret = stm32f10xx_rc.write_ram(buf, params.arg[1], params.arg[2]);
+        ret = rc->write_ram(buf, params.arg[1], params.arg[2]);
         kfree(buf);
         break;
     case SWDDEV_IOC_DWNLDFLSH:
@@ -237,11 +260,11 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
             kfree(buf);
             return -EFAULT;
         }
-        ret = stm32f10xx_rc.program_flash(buf, params.arg[1], params.arg[2]);
+        ret = rc->program_flash(buf, params.arg[1], params.arg[2]);
         kfree(buf);
         break;
     case SWDDEV_IOC_ERSFLSH:
-        stm32f10xx_rc.erase_flash_all();
+        rc->erase_flash_all();
         break;
     case SWDDEV_IOC_VRFY:
         break;
@@ -301,14 +324,9 @@ static int __init swd_init(void)
 
     spin_lock_init(&__lock);
 
-    stm32f10xx_sg.signal_begin = signal_begin;
-    stm32f10xx_sg.signal_end = signal_end;
-    stm32f10xx_sg.SWCLK_SET = SWCLK_SET;
-    stm32f10xx_sg.SWDIO_DIR_IN = SWDIO_DIR_IN;
-    stm32f10xx_sg.SWDIO_DIR_OUT = SWDIO_DIR_OUT;
-    stm32f10xx_sg.SWDIO_SET = SWDIO_SET;
-    stm32f10xx_sg.SWDIO_GET = SWDIO_GET;
-    stm32f10xx_sg._delay = delay;
+    // bind with rproc_core
+    stm32f10xx_rc.gpio_bind(&stm32f10xx_sg);
+    swd_dev.rc = &stm32f10xx_rc;
 
     pr_info("%s: [%s] %d probe finished\n", SWDDEV_NAME, __func__, __LINE__);
     return 0;

@@ -1,9 +1,14 @@
 #ifndef RPROC_CORE_H
 #define RPROC_CORE_H
 
+#include "swd_gpio/swd_gpio.h"
+
 struct rproc_core {
+    // set swd_gpio binding
+    void (*gpio_bind)(struct swd_gpio *sg);
+
     // functions for core
-    int (*init)(void);
+    int (*core_init)(void);
     void (*setup_swd)(void);
     void (*reset)(void);
     void (*unhalt_core)(void);
