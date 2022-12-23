@@ -86,7 +86,6 @@ static int swd_open(struct inode *inode, struct file* filp)
     struct rproc_core *rc = sd->rc;
 
     pr_info("%s: [%s] %d open start\n", SWDDEV_NAME, __func__, __LINE__);
-    pr_err("swd_dev:%016lx, sd:%016lx\n",&swd_dev, sd);
 
     // allow one process to open it.
     if(!atomic_dec_and_test(&open_lock)){
