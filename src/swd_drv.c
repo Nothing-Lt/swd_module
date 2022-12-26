@@ -188,12 +188,13 @@ static ssize_t swd_read(struct file *filp, char *user_buf, size_t len, loff_t *o
     if (ret)
         return ret;
 
+    *off += len_to_cpy;
+
 swd_ap_read_fault:
     kfree(buf);
 
     pr_info("%s: [%s] %d read finished\n", SWDDEV_NAME, __func__, __LINE__);
 
-    *off += len_to_cpy;
     return len_to_cpy;
 }
 
