@@ -9,14 +9,22 @@ A kernel module to program Cortex-M3 MCU (*bluepill* is tried) by emulating [ARM
 *So far I targeted on Cortex-M3 chips that I have is "bluepill" with a stm32f103cbt6 MCU.*
 
 ## Usage
-- Set the _swclk_pin and _swdio_pin. 
-- compile
+- Set the _swclk_pin and _swdio_pin.
+- Select the core in _init function
+- Compile
 - use (Please refere to the test cases)
 
 ## Verified function and SBC boards
 
+### stm32f103cbt6
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| RPI3-B+ | OK | OK | OK | OK | OK | OK | OK | ok |
-| RPI4 |  OK  |  OK  |  OK  |  OK  |  OK  |  OK  |  OK  |  OK  |
+| RPI3-B+ | | | | | | | | |
+| RPI4 | | | | | | | | | 
+
+### stm32f411ceu6
+|     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| RPI3-B+ | | | | | | | | |
+| RPI4 | OK | OK  | OK  | ? | OK | NG | NG | NG |
 
