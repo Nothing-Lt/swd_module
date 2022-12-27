@@ -28,6 +28,7 @@ static int _swclk_pin = 27;
 static int _swdio_pin = 17;
 
 extern struct rproc_core stm32f10xx_rc;
+extern struct rproc_core stm32f411xx_rc;
 
 static inline void _delay(unsigned long long time_out)
 {
@@ -69,6 +70,18 @@ static inline void signal_end (void) {
 
 // setup the gpio level things
 struct swd_gpio stm32f10xx_sg = {
+    .signal_begin = signal_begin,
+    .signal_end = signal_end,
+    .SWCLK_SET = SWCLK_SET,
+    .SWDIO_DIR_IN = SWDIO_DIR_IN,
+    .SWDIO_DIR_OUT = SWDIO_DIR_OUT,
+    .SWDIO_SET = SWDIO_SET,
+    .SWDIO_GET = SWDIO_GET,
+    ._delay = delay
+};
+
+// setup the gpio level things
+struct swd_gpio stm32f411xx_sg = {
     .signal_begin = signal_begin,
     .signal_end = signal_end,
     .SWCLK_SET = SWCLK_SET,
@@ -325,8 +338,11 @@ static int __init swd_init(void)
     spin_lock_init(&__lock);
 
     // bind with rproc_core
-    stm32f10xx_rc.gpio_bind(&stm32f10xx_sg);
-    swd_dev.rc = &stm32f10xx_rc;
+    // stm32f10xx_rc.gpio_bind(&stm32f10xx_sg);
+    // swd_dev.rc = &stm32f10xx_rc;
+    // for stm32f411
+    stm32f411xx_rc.gpio_bind(&stm32f411xx_sg);
+    swd_dev.rc = &stm32f411xx_rc;
 
     pr_info("%s: [%s] %d probe finished\n", SWDDEV_NAME, __func__, __LINE__);
     return 0;
