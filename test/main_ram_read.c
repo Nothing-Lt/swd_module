@@ -3,6 +3,8 @@
 
 #include "../include/swd_module.h"
 
+#define RAM_BASE 0x20000000
+
 int main(int argc, char **argv)
 {
     int i;
@@ -16,7 +18,9 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    fseek(f, 0x20000000, SEEK_SET);
+    // dump ram
+    printf("Data in RAM\n");
+    fseek(f, RAM_BASE, SEEK_SET);
     fread(buf, BUFSIZ, sizeof(uint32_t), f);
 
     for (i=0;i<BUFSIZ;i++) {

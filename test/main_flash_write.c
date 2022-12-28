@@ -12,6 +12,7 @@
 
 #include "../include/swd_module.h"
 
+#define FLASH_BASE 0x08000000
 #define FLASH_PAGE_SIZE 0x1000
 
 int main(int argc, char **argv)
@@ -44,7 +45,7 @@ int main(int argc, char **argv)
         params.arg[1] = offset;
         params.arg[2] = FLASH_PAGE_SIZE;
         if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
-            i--;
+            i-=1;
             continue;
         }
 
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
     }
 
     // Read and verify
+    lseek(fd, FLASH_BASE, SEEK_SET);
     read(fd, buf_result, sizeof(buf_result));
     if (!memcmp(buf_ori, buf_result, sizeof(buf_ori))) {
         printf("Verify programmed data Success\n");
@@ -60,7 +62,7 @@ int main(int argc, char **argv)
         printf("Err, Verify programmed data failed\n");
     }
 
-    ioctl(fd, SWDDEV_IOC_ERSFLSH);
+    // ioctl(fd, SWDDEV_IOC_ERSFLSH);
 
     close(fd);
 

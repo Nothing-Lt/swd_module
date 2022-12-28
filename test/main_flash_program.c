@@ -12,7 +12,6 @@
 
 #include "../include/swd_module.h"
 
-#define BIN_FILE    "blink.bin"
 #define FLASH_PAGE_SIZE 0x1000
 
 int main(int argc, char **argv)
@@ -31,9 +30,9 @@ int main(int argc, char **argv)
         printf("Err with open dev\n");
         goto swd_open_fail;
     }
-    fp = fopen(BIN_FILE, "rb");
+    fp = fopen(argv[1], "rb");
     if (!fp) {
-        printf("Err with open %s\n", BIN_FILE);
+        printf("Err with open %s\n", argv[1]);
         goto bin_open_fail;
     }
 
