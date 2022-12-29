@@ -485,9 +485,6 @@ static ssize_t stm32f10xx_program_flash(void *from, u32 offset, u32 len)
         return -1;
     }
 
-    // erase the corresponding page
-    // stm32f10xx_erase_flash_page(FLASH_BASE + offset, len);
-
     // Set the programming bit
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
     data |= FLASH_CR_PG_MSK;

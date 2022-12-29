@@ -519,9 +519,6 @@ static ssize_t stm32f411xx_program_flash(void *from, u32 offset, u32 len)
         return -1;
     }
 
-    // erase the corresponding page
-    // stm32f411xx_erase_flash_sector(offset, len);
-
     // check if the flash is busy
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_SR, sizeof(u32));
     if(data & FLASH_SR_BSY_MSK){
