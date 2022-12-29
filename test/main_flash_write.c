@@ -42,6 +42,7 @@ int main(int argc, char **argv)
     params.arg[0] = 0;
     params.arg[1] = sizeof(buf_ori);
     ioctl(fd, SWDDEV_IOC_ERSFLSH_PG, &params);
+    printf("Flash erased\n");
 
     offset = 0;
     for (i=0 ; i < BUFSIZ/(FLASH_PAGE_SIZE/4) ; i++) {

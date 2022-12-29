@@ -278,6 +278,8 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         rc->erase_flash_all();
         break;
     case SWDDEV_IOC_ERSFLSH_PG:
+        if(copy_from_user(&params, (void*)arg, sizeof(struct swd_parameters)))
+            return -EFAULT;
         rc->erase_flash_page(params.arg[0], params.arg[1]);
         break;
     case SWDDEV_IOC_VRFY:
