@@ -52,6 +52,12 @@ int main(int argc, char **argv)
 
     fread(buf, sizeof(uint32_t), file_size/sizeof(uint32_t), fp);
 
+    printf("Erasing flash by page\n");
+    params.arg[0] = 0;
+    params.arg[1] = buf_size;
+    ioctl(fd, SWDDEV_IOC_ERSFLSH_PG, &params);
+
+    printf("Pragramming flash\n");
     // write to flash
     offset = 0;
     for (i=0 ; i < buf_size/FLASH_PAGE_SIZE ; i++) {

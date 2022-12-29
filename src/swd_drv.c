@@ -212,16 +212,14 @@ swd_ap_read_fault:
 }
 
 //  0. reset line
-//  1. read dp reg
-//  2. write dp reg
-//  3. halt core
-//  4. unhalt core
-//  5. test alive
-//  6. set base
-//  7. download to sram
-//  8. download to flash
-//  9. erase flash
-//  10. verify
+//  1. halt core
+//  2. unhalt core
+//  2. test alive
+//  4. download to sram
+//  5. download to flash
+//  6. erase flash
+//  7. erase flash by page
+//  8. verify
 static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
     long ret = 0;
@@ -278,6 +276,9 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         break;
     case SWDDEV_IOC_ERSFLSH:
         rc->erase_flash_all();
+        break;
+    case SWDDEV_IOC_ERSFLSH_PG:
+        rc->erase_flash_page(params.arg[0], params.arg[1]);
         break;
     case SWDDEV_IOC_VRFY:
         break;
