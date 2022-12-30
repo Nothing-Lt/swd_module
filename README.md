@@ -6,8 +6,6 @@ A kernel module to program Cortex-M3 MCU (*bluepill* is tried) by emulating [ARM
 - Some MPUs like AM33x used by Beaglebone-Black has a PRU and STM32MP1x has a cortex-m core. 
 - This kernel module aims to make the SoC which has no sub-core have an external extended cortex-m sub-core and control it by SoC via emulated SWD protocol.
 
-*So far I targeted on Cortex-M3 chips that I have is "bluepill" with a stm32f103cbt6 MCU.*
-
 ## Usage
 - Set the _swclk_pin and _swdio_pin.
 - Select the core in _init function
@@ -16,13 +14,13 @@ A kernel module to program Cortex-M3 MCU (*bluepill* is tried) by emulating [ARM
 
 ## Verified function and SBC boards
 
-### stm32f103cbt6
+### stm32f103c8t6([bluepill](https://stm32-base.org/boards/STM32F103C8T6-Blue-Pill.html))
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | | | | | | | | |
 | RPI4 | | | | | | | | | 
 
-### stm32f411ceu6
+### stm32f411ceu6([blackpill](https://shop.pimoroni.com/products/stm32f411-blackpill-development-board?variant=39274213343315))
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | | | | | | | | |
