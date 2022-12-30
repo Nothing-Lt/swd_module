@@ -433,6 +433,12 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
     int page_len;
     u32 base = FLASH_BASE + offset;
 
+    // Unlock flash
+    if(stm32f10xx_unlock_flash()) {
+        pr_err("%s [%s] Unable to unlock flash\n", __FILE__, __func__);
+        return -1;
+    }
+
     // 1. write FLASH_CR_PER to 1
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
     data |= FLASH_CR_PER_MSK;
@@ -465,6 +471,8 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
     data &= (~FLASH_CR_PER_MSK);
     _swd_ap_write(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
+
+    stm32f10xx_lock_flash();
 }
 
 static ssize_t stm32f10xx_program_flash(void *from, u32 offset, u32 len)
