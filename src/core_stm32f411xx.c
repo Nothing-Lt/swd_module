@@ -456,6 +456,11 @@ static void stm32f411xx_erase_flash_sector(u32 offset, u32 len)
     u32 sctr_nmb;
     u32 erase_offset;
 
+    if(stm32f411xx_unlock_flash()) {
+        pr_err("[%s] Unable to unlock flash\n",  __func__);
+        return;
+    }
+
     // check if the flash is busy
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_SR, sizeof(u32));
     if(data & FLASH_SR_BSY_MSK){
@@ -501,6 +506,8 @@ static void stm32f411xx_erase_flash_sector(u32 offset, u32 len)
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
     data &= ~(FLASH_CR_SER_MSK | (0xf << FLASH_CR_SNB_OFF));
     _swd_ap_write(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
+
+    stm32f411xx_lock_flash();
 }
 
 static ssize_t stm32f411xx_program_flash(void *from, u32 offset, u32 len)
