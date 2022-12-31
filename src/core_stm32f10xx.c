@@ -436,7 +436,7 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
     // Unlock flash
     if(stm32f10xx_unlock_flash()) {
         pr_err("%s [%s] Unable to unlock flash\n", __FILE__, __func__);
-        return -1;
+        return;
     }
 
     // 1. write FLASH_CR_PER to 1
