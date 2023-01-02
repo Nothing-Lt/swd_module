@@ -114,7 +114,7 @@ static int swd_open(struct inode *inode, struct file* filp)
 
     rc->halt_core();
 
-    filp->f_pos = SWD_FLASH_BASE;
+    filp->f_pos = rc->ci->cm->flash.base;
     filp->private_data = &swd_dev;
 
     pr_info("%s: [%s] %d open finished\n", SWDDEV_NAME, __func__, __LINE__);
@@ -278,11 +278,16 @@ static long swd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
         rc->erase_flash_all();
         break;
     case SWDDEV_IOC_ERSFLSH_PG:
-        if(copy_from_user(&params, (void*)arg, sizeof(struct swd_parameters)))
+        if (copy_from_user(&params, (void*)arg, sizeof(struct swd_parameters)))
             return -EFAULT;
         rc->erase_flash_page(params.arg[0], params.arg[1]);
         break;
-    case SWDDEV_IOC_VRFY:
+    case SWDDEV_IOC_MEMINFO_GET:
+        if (copy_from_user(&params, (void*)arg, sizeof(struct swd_parameters)))
+            return -EFAULT;
+        if (copy_to_user((void*)params.arg[0], rc->ci->cm, rc->ci->cm_size))
+            return -EFAULT;
+        pr_err("[%s] %d size:%d\n", __FILE__, __LINE__, rc->ci->cm_size);
         break;
     default:
         pr_err("%s [%s] %d unknown cmd %08x\n", SWDDEV_NAME, __func__, __LINE__, cmd);

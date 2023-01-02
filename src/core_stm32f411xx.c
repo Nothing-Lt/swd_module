@@ -46,12 +46,6 @@ enum SWD_AHB_REGS {
 #define SWD_BANK_SIZE   0x1000
 #define SWD_MEMAP_BANK_0 0x00000000
 
-#define SWD_FLASH_BASE  0x08000000
-#define SWD_RAM_BASE    0x20000000
-
-#define FLASH_PAGE_SIZE 0x1000
-#define RAM_PAGE_SIZE 0x400
-
 #define FLASH_MIR_BASE  0x40023C00
 #define FLASH_ACR       FLASH_MIR_BASE
 #define FLASH_KEYR      FLASH_MIR_BASE + 0x4
@@ -78,20 +72,46 @@ enum SWD_AHB_REGS {
 #define FLASH_CR_MER_MSK    BIT(FLASH_CR_MER_OFF)
 #define FLASH_CR_STRT_MSK   BIT(FLASH_CR_STRT_OFF)
 
-// flash sector info of stm32f411
-struct flsh_sctr {
-    u32 start;
-    u32 end;
-    u32 size;
-} stm32f411xx_flsh_sctr[] = {
-    {.start = 0000000, .end = 16*1024-1, .size = 16*1024},
-    {.start = 16*1024, .end = 32*1024-1, .size = 16*1024},
-    {.start = 32*1024, .end = 48*1024-1, .size = 16*1024},
-    {.start = 48*1024, .end = 64*1024-1, .size = 16*1024},
-    {.start = 64*1024, .end = 128*1024-1, .size = 64*1024},
-    {.start = 128*1024, .end = 256*1024-1, .size = 128*1024},
-    {.start = 256*1024, .end = 384*1024-1, .size = 128*1024},
-    {.start = 384*1024, .end = 512*1024-1, .size = 128*1024}
+struct core_mem stm32f411xx_cm = {
+    .sram = {
+        .name = "SRAM",
+        .attr = 0,
+        .offset = 0,
+        .len = 128*1024,
+        .base = 0x20000000,
+        .program_size = 1024,
+    },
+
+    .flash = {
+        .name = "flash",
+        .attr = 1,
+        .offset = 1,
+        .len = 8,
+        .base = 0x08000000,
+        .program_size = 4096
+    },
+
+    .mem_segs = {
+        // mem_segs for SRAM
+        {.start = 0x000, .size = 1024},
+
+        // mem_segs for flash
+        {.start = 0000000, .size = 16*1024},
+        {.start = 16*1024, .size = 16*1024},
+        {.start = 32*1024, .size = 16*1024},
+        {.start = 48*1024, .size = 16*1024},
+        {.start = 64*1024, .size = 64*1024},
+        {.start = 128*1024, .size = 128*1024},
+        {.start = 256*1024, .size = 128*1024},
+        {.start = 384*1024, .size = 128*1024},
+    }
+};
+
+struct cm_info stm32f411xx_ci = {
+    .cm = &stm32f411xx_cm,
+    .cm_size = sizeof(struct core_mem) + \
+            8 * sizeof(struct mem_seg) + \
+            sizeof(struct mem_seg),
 };
 
 static struct swd_gpio *stm32f411xx_sg;
@@ -453,6 +473,7 @@ static void stm32f411xx_erase_flash_sector(u32 offset, u32 len)
 {
     u32 data;
     int retry;
+    int memseg_idx;
     u32 sctr_nmb;
     u32 erase_offset;
 
@@ -470,11 +491,14 @@ static void stm32f411xx_erase_flash_sector(u32 offset, u32 len)
 
     // do sector erase
     erase_offset = offset;
-    for (sctr_nmb = 0 ;
-        sctr_nmb < (sizeof(stm32f411xx_flsh_sctr)/sizeof(struct flsh_sctr));
-        sctr_nmb++) {
-        if ((stm32f411xx_flsh_sctr[sctr_nmb].start <= erase_offset) && \
-            erase_offset <= (stm32f411xx_flsh_sctr[sctr_nmb].end)) {
+    for (memseg_idx = stm32f411xx_cm.flash.offset;
+        memseg_idx < stm32f411xx_cm.flash.offset + stm32f411xx_cm.flash.len;
+        memseg_idx++) {
+        if ((stm32f411xx_cm.mem_segs[memseg_idx].start <= erase_offset) && \
+            erase_offset < (stm32f411xx_cm.mem_segs[memseg_idx].start + stm32f411xx_cm.mem_segs[memseg_idx].size)) {
+            sctr_nmb = memseg_idx - stm32f411xx_cm.flash.offset;
+            pr_err("[%s] %d erasing sctr:%d from:%08x, size:%08x\n",  __func__, __LINE__, 
+                sctr_nmb, erase_offset, stm32f411xx_cm.mem_segs[memseg_idx].size);
             // set the sector erase and sector number
             _swd_ap_read(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
             data |= (FLASH_CR_SER_MSK | (sctr_nmb << FLASH_CR_SNB_OFF));
@@ -493,8 +517,8 @@ static void stm32f411xx_erase_flash_sector(u32 offset, u32 len)
             }while((retry--) && (data & FLASH_SR_BSY_MSK));
 
             // sector erase completed, go to the next sector
-            erase_offset = stm32f411xx_flsh_sctr[sctr_nmb].start + \
-                            stm32f411xx_flsh_sctr[sctr_nmb].size;
+            erase_offset = stm32f411xx_cm.mem_segs[memseg_idx].start + \
+                            stm32f411xx_cm.mem_segs[memseg_idx].size;
 
             // check if the demand size is finished
             if ((erase_offset - offset) >= len)
@@ -540,7 +564,7 @@ static ssize_t stm32f411xx_program_flash(void *from, u32 offset, u32 len)
     _swd_ap_write(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
 
     // write data to flash
-    _swd_ap_write(stm32f411xx_sg, buf, SWD_FLASH_BASE + offset, len);
+    _swd_ap_write(stm32f411xx_sg, buf, stm32f411xx_cm.flash.base + offset, len);
 
     retry = RETRY;
     do{
@@ -554,7 +578,7 @@ static ssize_t stm32f411xx_program_flash(void *from, u32 offset, u32 len)
 
     // verify
     err = 0;
-    cur_base = SWD_FLASH_BASE + offset;
+    cur_base = stm32f411xx_cm.flash.base + offset;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(stm32f411xx_sg, &data, cur_base, sizeof(u32));
         if (data != buf[i])
@@ -584,12 +608,12 @@ static ssize_t stm32f411xx_write_ram(void* from, u32 offset, u32 len)
     u32 len_to_read = len / sizeof(u32);
 
     // write data to ram
-    if (_swd_ap_write(stm32f411xx_sg, buf, SWD_RAM_BASE + offset, len) < 0)
+    if (_swd_ap_write(stm32f411xx_sg, buf, stm32f411xx_cm.sram.base + offset, len) < 0)
         return -ENODEV;
 
     // verify
     err = 0;
-    cur_base = SWD_RAM_BASE + offset;
+    cur_base = stm32f411xx_cm.sram.base + offset;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(stm32f411xx_sg, &data, cur_base, sizeof(u32));
         if (data != buf[i])
@@ -619,4 +643,5 @@ struct rproc_core stm32f411xx_rc = {
     .program_flash = stm32f411xx_program_flash,
     .write_ram = stm32f411xx_write_ram,
     .read_ram = stm32f411xx_read,
+    .ci = &stm32f411xx_ci
 };
