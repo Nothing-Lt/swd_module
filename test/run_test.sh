@@ -5,7 +5,7 @@ echo "============== Test Alive =============="
 echo ""
 
 echo "============== RAM Download =============="
-./main_ram_download
+./main_ram_write
 echo ""
 
 echo "============== RAM read(read default) =============="

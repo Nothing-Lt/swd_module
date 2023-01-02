@@ -12,17 +12,20 @@
 
 #include "../include/swd_module.h"
 
-#define FLASH_BASE 0x08000000
-#define FLASH_PAGE_SIZE 0x1000
-
 int main(int argc, char **argv)
 {
-    int i;
+    int i,j;
     int fd = -1;
     uint32_t offset;
     uint32_t buf_ori[BUFSIZ];
     uint32_t buf_result[BUFSIZ];
     struct swd_parameters params;
+    void *meminfo_buf = NULL;
+    struct user_core_mem *cm;
+
+    meminfo_buf = malloc(4096);
+    if (!meminfo_buf)
+        return -1;
 
     srand((unsigned long)time(NULL));
 
@@ -38,6 +41,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    params.arg[0] = (unsigned long)meminfo_buf;
+    ioctl(fd, SWDDEV_IOC_MEMINFO_GET, &params);
+    cm = (struct user_core_mem*)meminfo_buf;
+
     printf("Erasing flash by page\n");
     params.arg[0] = 0;
     params.arg[1] = sizeof(buf_ori);
@@ -45,22 +52,38 @@ int main(int argc, char **argv)
     printf("Flash erased\n");
 
     offset = 0;
-    for (i=0 ; i < BUFSIZ/(FLASH_PAGE_SIZE/4) ; i++) {
+    for (i = 0 ; i < BUFSIZ / (cm->flash.program_size / 4); i++) {
         // Download to Flash
-        params.arg[0] = (unsigned long)&(buf_ori[i*(FLASH_PAGE_SIZE/4)]);
+        params.arg[0] = (unsigned long)&(buf_ori[i*(cm->flash.program_size/4)]);
         params.arg[1] = offset;
-        params.arg[2] = FLASH_PAGE_SIZE;
+        params.arg[2] = cm->flash.program_size;
         if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
-            i-=1;
+            // find the corresponding mem_seg
+            for (j=cm->flash.offset ; j < cm->flash.offset+cm->flash.len ; j++) {
+                    printf("Have write error, sector:%08x, size:%08x\n",
+                        cm->mem_segs[j].start, cm->mem_segs[j].size);
+                if ((cm->mem_segs[j].start <= offset) && \
+                    (offset < cm->mem_segs[j].start + cm->mem_segs[j].size)) {
+                    printf("Have write error, sector:%08x, size:%08x\n",
+                        cm->mem_segs[j].start, cm->mem_segs[j].size);
+                    params.arg[0] = cm->mem_segs[j].start;
+                    params.arg[1] = cm->mem_segs[j].size;
+                    ioctl(fd, SWDDEV_IOC_ERSFLSH_PG, &params);
+                    break;
+                }
+            }
+            // adjust the i and reprogram that mem seg
+            i = i - ((offset - cm->mem_segs[j].start) / cm->flash.program_size);
+            offset = cm->mem_segs[j].start;
             continue;
         }
 
-        printf("Programmed -%d/%d-\n", i+1, BUFSIZ/(FLASH_PAGE_SIZE/4));
-        offset += FLASH_PAGE_SIZE;
+        printf("Programmed -%d/%d-\n", i+1, BUFSIZ/(cm->flash.program_size/4));
+        offset += cm->flash.program_size;
     }
 
     // Read and verify
-    lseek(fd, FLASH_BASE, SEEK_SET);
+    lseek(fd, cm->flash.base, SEEK_SET);
     read(fd, buf_result, sizeof(buf_result));
     if (!memcmp(buf_ori, buf_result, sizeof(buf_ori))) {
         printf("Verify programmed data Success\n");
@@ -68,8 +91,9 @@ int main(int argc, char **argv)
         printf("Err, Verify programmed data failed\n");
     }
 
-    // ioctl(fd, SWDDEV_IOC_ERSFLSH);
+    ioctl(fd, SWDDEV_IOC_ERSFLSH);
 
+    free(meminfo_buf);
     close(fd);
 
     return 0;

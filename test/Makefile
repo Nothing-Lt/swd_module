@@ -1,5 +1,5 @@
 
-BINS = main_flash_write main_flash_program main_flash_erase_all main_ram_download main_test_alive main_ram_read main_flash_read
+BINS = main_flash_write main_flash_program main_flash_erase_all main_ram_write main_test_alive main_ram_read main_flash_read
 CC ?= gcc
 
 .PHONY: all
