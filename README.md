@@ -24,6 +24,6 @@ A kernel module to program Cortex-M3/4 MCU by emulating [ARM Serial Wire Debug (
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | | | | | | | | |
-| RPI4 |   |    |    |   |   |   |   |   |
+| RPI4 | OK |  OK |  OK | OK | OK | OK | OK | OK |
 
 
