@@ -9,6 +9,8 @@
 				compatible = "swd";
 				swclk-gpios = <&gpio 27 0>;
 				swdio-gpios = <&gpio 17 0>;
+				//core = "stm32f10xx";
+				core = "stm32f411xx";
 			};
 		};
 	};	
