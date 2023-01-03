@@ -46,12 +46,6 @@ enum SWD_AHB_REGS {
 #define SWD_BANK_SIZE   0x1000
 #define SWD_MEMAP_BANK_0 0x00000000
 
-#define FLASH_BASE  0x08000000
-#define SWD_RAM_BASE    0x20000000
-
-#define FLASH_PAGE_SIZE 0x1000
-#define RAM_PAGE_SIZE 0x400
-
 #define FLASH_MIR_BASE  0x40022000
 #define FLASH_ACR       FLASH_MIR_BASE
 #define FLASH_KEYR      FLASH_MIR_BASE + 0x4
@@ -76,6 +70,41 @@ enum SWD_AHB_REGS {
 #define FLASH_CR_LOCK_MSK   BIT(FLASH_CR_LOCK_OFF)
 #define FLASH_CR_MER_MSK    BIT(FLASH_CR_MER_OFF)
 #define FLASH_CR_STRT_MSK   BIT(FLASH_CR_STRT_OFF)
+
+struct core_mem stm32f10xx_cm = {
+    .sram = {
+        .name = "SRAM",
+        .attr = 0,
+        .offset = 0,
+        .len = 20*1024,
+        .base = 0x20000000,
+        .program_size = 1024,
+    },
+
+    .flash = {
+        .name = "flash",
+        .attr = 0,
+        .offset = 1,
+        .len = 64*1024,
+        .base = 0x08000000,
+        .program_size = 4096
+    },
+
+    .mem_segs = {
+        // mem_segs for SRAM
+        {.start = 0x000, .size = 1024},
+
+        // mem_segs for flash
+        {.start = 0x000, .size = 1024}
+    }
+};
+
+struct cm_info stm32f10xx_ci = {
+    .cm = &stm32f10xx_cm,
+    .cm_size = sizeof(struct core_mem) + \
+            2 * sizeof(struct mem_seg) + \
+            sizeof(struct mem_seg),
+};
 
 static struct swd_gpio *stm32f10xx_sg;
 
@@ -431,7 +460,7 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
     u32 data;
     int retry;
     int page_len;
-    u32 base = FLASH_BASE + offset;
+    u32 base = stm32f10xx_cm.flash.base + offset;
 
     // Unlock flash
     if(stm32f10xx_unlock_flash()) {
@@ -445,10 +474,10 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
     _swd_ap_write(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
 
     // 2. write address to FAR
-    if (len % RAM_PAGE_SIZE)
-        page_len = (len / RAM_PAGE_SIZE) + 1;
+    if (len % stm32f10xx_cm.flash.program_size)
+        page_len = (len / stm32f10xx_cm.flash.program_size) + 1;
     else
-        page_len = len / RAM_PAGE_SIZE;
+        page_len = len / stm32f10xx_cm.flash.program_size;
     for (i = 0 ; i < page_len ; i++) {
         _swd_ap_write(stm32f10xx_sg, &base, FLASH_AR, sizeof(u32));
 
@@ -464,7 +493,7 @@ static void stm32f10xx_erase_flash_page(u32 offset, u32 len)
             _swd_ap_read(stm32f10xx_sg, &data, FLASH_SR, sizeof(u32));
         }while((retry--) && (data & FLASH_SR_BSY_MSK));
 
-        base += RAM_PAGE_SIZE;
+        base += stm32f10xx_cm.flash.program_size;
     }
 
     // Restore the original value of FLASH_CR
@@ -528,7 +557,7 @@ static ssize_t stm32f10xx_program_flash(void *from, u32 offset, u32 len)
     }
 
     // write data to flash
-    _swd_ap_write(stm32f10xx_sg, buf, FLASH_BASE + offset, len);
+    _swd_ap_write(stm32f10xx_sg, buf, stm32f10xx_cm.flash.base + offset, len);
 
     // restore the value in AP_CSW
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
@@ -553,7 +582,7 @@ static ssize_t stm32f10xx_program_flash(void *from, u32 offset, u32 len)
 
     // verify
     err = 0;
-    cur_base = FLASH_BASE + offset;
+    cur_base = stm32f10xx_cm.flash.base + offset;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(stm32f10xx_sg, &data, cur_base, sizeof(u32));
         if (data != buf[i])
@@ -565,7 +594,7 @@ static ssize_t stm32f10xx_program_flash(void *from, u32 offset, u32 len)
     pr_info("%s: [%s] errors:%d\n", __FILE__, __func__, err);
 
     if (err) {
-        stm32f10xx_erase_flash_page(FLASH_BASE + offset, len);
+        stm32f10xx_erase_flash_page(offset, len);
         stm32f10xx_lock_flash();
         return err;
     }
@@ -585,12 +614,12 @@ static ssize_t stm32f10xx_write_ram(void* from, u32 offset, u32 len)
     u32 len_to_read = len / sizeof(u32);
 
     // write data to ram
-    if (_swd_ap_write(stm32f10xx_sg, buf, SWD_RAM_BASE + offset, len) < 0)
+    if (_swd_ap_write(stm32f10xx_sg, buf, stm32f10xx_cm.sram.base + offset, len) < 0)
         return -ENODEV;
 
     // verify
     err = 0;
-    cur_base = SWD_RAM_BASE + offset;
+    cur_base = stm32f10xx_cm.sram.base + offset;
     for (i = 0 ; i < len_to_read ; i++) {
         _swd_ap_read(stm32f10xx_sg, &data, cur_base, sizeof(u32));
         if (data != buf[i])
@@ -620,4 +649,5 @@ struct rproc_core stm32f10xx_rc = {
     .program_flash = stm32f10xx_program_flash,
     .write_ram = stm32f10xx_write_ram,
     .read_ram = stm32f10xx_read,
+    .ci = &stm32f10xx_ci
 };
