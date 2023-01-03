@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     offset = 0;
     for (i = 0 ; i < buf_size / cm->flash.program_size; i++) {
         // Download to Flash
-        params.arg[0] = ((unsigned long)buf) + (i * cm->flash.program_size);// (unsigned long)&(buf_ori[i*(cm->flash.program_size/4)]);
+        params.arg[0] = ((unsigned long)buf) + (i * cm->flash.program_size);
         params.arg[1] = offset;
         params.arg[2] = cm->flash.program_size;
         if (ioctl(fd, SWDDEV_IOC_DWNLDFLSH, &params)) {
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
                 }
             }
             // adjust the i and reprogram that mem seg
-            i = i - ((offset - cm->mem_segs[j].start) / cm->flash.program_size);
+            i = i - ((offset - cm->mem_segs[j].start) / cm->flash.program_size) - 1;
             offset = cm->mem_segs[j].start;
             continue;
         }

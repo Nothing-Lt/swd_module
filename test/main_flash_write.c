@@ -64,8 +64,6 @@ int main(int argc, char **argv)
                         cm->mem_segs[j].start, cm->mem_segs[j].size);
                 if ((cm->mem_segs[j].start <= offset) && \
                     (offset < cm->mem_segs[j].start + cm->mem_segs[j].size)) {
-                    printf("Have write error, sector:%08x, size:%08x\n",
-                        cm->mem_segs[j].start, cm->mem_segs[j].size);
                     params.arg[0] = cm->mem_segs[j].start;
                     params.arg[1] = cm->mem_segs[j].size;
                     ioctl(fd, SWDDEV_IOC_ERSFLSH_PG, &params);
@@ -73,7 +71,7 @@ int main(int argc, char **argv)
                 }
             }
             // adjust the i and reprogram that mem seg
-            i = i - ((offset - cm->mem_segs[j].start) / cm->flash.program_size);
+            i = i - ((offset - cm->mem_segs[j].start) / cm->flash.program_size) - 1;
             offset = cm->mem_segs[j].start;
             continue;
         }
