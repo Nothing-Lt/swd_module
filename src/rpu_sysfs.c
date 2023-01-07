@@ -132,8 +132,10 @@ static ssize_t rpu_status_read(struct file *filp, struct kobject *kobj,
 
     pr_info("%s [%s] start\n",RPUDEV_NAME, __func__);
 
-    if (off)
-        return 0;
+    if (off) {
+        count = 0;
+        goto rpu_status_finish;
+    }
 
     if (rpu_status == RPU_STATUS_UNHALT)
         count = sprintf(buf, "%s\n", "unhalt");
@@ -142,6 +144,7 @@ static ssize_t rpu_status_read(struct file *filp, struct kobject *kobj,
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
+rpu_status_finish:
     atomic_inc(&open_lock);
 
     return count;
@@ -168,8 +171,10 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,
     pr_info("%s [%s] start\n",RPUDEV_NAME, __func__);
 
     ret = kstrtoint(buf, count, &val);
-    if (ret < 0)
-        return -1;
+    if (ret < 0) {
+        count = -1;
+        goto rpu_control_finish;
+    }
 
     if (val == RPU_STATUS_UNHALT) {
         rpu_status = RPU_STATUS_UNHALT;
@@ -182,6 +187,7 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
+rpu_control_finish:
     atomic_inc(&open_lock);
 
     return count;
