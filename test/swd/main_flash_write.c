@@ -92,7 +92,6 @@ int main(int argc, char **argv)
                 params.arg[0] = offset;
                 params.arg[1] = cm->flash.program_size;
                 ioctl(fd, SWDDEV_IOC_ERSFLSH_PG, &params);
-                break;
 
                 // adjust the i and reprogram that mem seg
                 i--;

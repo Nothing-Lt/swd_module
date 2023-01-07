@@ -87,7 +87,7 @@ struct core_mem stm32f103c8t6_cm = {
         .offset = 1,
         .len = 64*1024,
         .base = 0x08000000,
-        .program_size = 4096
+        .program_size = 1024,
     },
 
     .mem_segs = {
