@@ -1,7 +1,7 @@
 #ifndef RPU_SYSFS_H
 #define RPU_SYSFS_H
 
-#include "swd.h"
+#include "swd_drv.h"
 
 enum RPU_STATUS {
     RPU_STATUS_HALT = 0,

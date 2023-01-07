@@ -4,31 +4,23 @@ echo "============== Test Alive =============="
 ./main_test_alive
 echo ""
 
-echo "============== main(read default) =============="
-./main
-echo ""
-
-echo "============== Set Base =============="
-./main_setbase
-echo ""
-
-echo "============== Read DP =============="
-./main_read_dp
-echo ""
-
-echo "============== Write DP =============="
-./main_write_dp
-echo ""
-
 echo "============== RAM Download =============="
-./main_ram_download
+./main_ram_write
 echo ""
+
+echo "============== RAM read(read default) =============="
+./main_ram_read > ram.txt
+echo "Dumped data in ram to file ram.txt\n"
 
 echo "============== Flash Download =============="
-./main_write_flash
+./main_flash_write
 echo ""
 
+echo "============== Flash read(read default) =============="
+./main_flash_read > flash.txt
+echo "Dumped data in flash to file flash.txt\n"
+
 echo "============== Download program to flash =============="
-./main_program_flash
+./main_flash_program ../blink_${1}.bin
 echo ""
 
