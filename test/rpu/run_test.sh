@@ -16,14 +16,14 @@ echo "============== halting core =============="
 echo 0 > /sys/class/swd/rpu/control
 echo ""
 
-core=`cat /sys/class/swd/rpu/core_name`
+core=$(cat /sys/class/swd/rpu/core_name)
 echo "============== write to ram =============="
 cat ../blink_$core.bin > /sys/class/swd/rpu/ram
 echo ""
 
 echo "============== main ram =============="
-./main_read_ram
-echo ""
+./main_read_ram > ram.txt
+echo "Dumped main ram to ram.txt\n"
 
 echo "============== Programming flash =============="
 cat ../blink_$core.bin > /sys/class/swd/rpu/flash

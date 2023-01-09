@@ -330,7 +330,7 @@ static ssize_t rpu_ram_write(struct file *filp, struct kobject *kobj,
     len_to_write = count;
     do {
         len = (len_to_write > cm->sram.program_size) ? cm->sram.program_size : len_to_write;
-        err = rc->write_ram(cm, &(buf[pos]), cm->sram.base + off + pos, len);
+        err = rc->write_ram(cm, &(buf[pos]), off + pos, len);
         if (err) {
             count = -1;
             goto rpu_status_unhalt;
