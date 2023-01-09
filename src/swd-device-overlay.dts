@@ -6,7 +6,7 @@
 		target-path = "/";
 		__overlay__ {
 			swd {
-				compatible = "swd";
+				compatible = "rproc,swd-gpio";
 				swclk-gpios = <&gpio 27 0>;
 				swdio-gpios = <&gpio 17 0>;
 				core = "stm32f103c8t6";

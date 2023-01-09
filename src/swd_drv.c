@@ -412,7 +412,7 @@ static int swd_remove(struct platform_device *pdev)
 }
 
 static struct of_device_id swd_driver_ids[] = {
-    {.compatible = "swd,remoteproc"},
+    {.compatible = "rproc,swd-gpio"},
     {}
 };
 MODULE_DEVICE_TABLE(of, swd_driver_ids);
