@@ -124,124 +124,86 @@ static int stm32f10xx_halt_core(void)
 
     // set the CTRL.core_reset_ap = 1
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_csw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG & 0xC, 0x8, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d read swd ap_csw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // enable the auto increment
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG, 0x23000012, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_csw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // DHCSR.C_DEBUGEN = 1
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DHCSR_REG, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_tar failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0003, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
       // DEMCR.VC_CORERESET = 1
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DEMCR_REG, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_tar failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x1, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // reset the core
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_AIRCR_REG, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0004, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // CTRL1.core_reset_ap = 0
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_IDR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_IDR_REG & 0xC, 0x0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // Select MEM BANK 0
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_MEMAP_BANK_0 & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     return 0;
 }
@@ -251,46 +213,16 @@ static void stm32f10xx_unhalt_core(void)
     u8 ack;
 
     // DHCSR.C_DEBUGEN = 1
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DHCSR_REG, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_tar failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0000, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DHCSR_REG, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0xA05F0000, true);
 
     // reset the core
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_AIRCR_REG, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0007, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_drw failed\n", __FILE__, __func__, __LINE__);
-    }
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_AIRCR_REG, true);
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_DRW_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0007, true);
 }
 
 u32 stm32f10xx_test_alive(void)
@@ -317,27 +249,24 @@ static int stm32f10xx_core_init(void)
 
     // Read IDCODE to wakeup the device
     ack = _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_IDCODE_REG, &data, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d read idcode fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
+
     pr_info("%s: [%s] %d idcode:%08x\n", __FILE__, __func__, __LINE__, data);
 
     // Set CSYSPWRUPREQ and CDBGPWRUPREQ
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_CTRLSTAT_REG, SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d wirte ctrlstat fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
+
     pr_info("%s: [%s] %d\n", __FILE__, __func__, __LINE__);
 
     // wait until the CSYSPWRUPREQ and CDBGPWRUPREQ are set
     do {
         ack = _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_CTRLSTAT_REG, &data, true);
-        if (ack != SWD_OK) {
-            pr_err("%s: [%s] %d read ctrlstat fail\n", __FILE__, __func__, __LINE__);
+        if (ack != SWD_OK)
             return -ENODEV;
-        }
+
         if ((data & (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK)) == (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK))
             break;
     } while(retry--);
@@ -345,38 +274,30 @@ static int stm32f10xx_core_init(void)
 
     // select the first AP bank
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d select first AP bank fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     // Select last AP bank
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_IDR_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d select last AP bank fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     ack = _swd_read(stm32f10xx_sg, SWD_AP, SWD_READ, SWD_AP_IDR_REG & 0xC, &data, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d select last AP bank fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
+
     pr_info("%s: [%s] %d IDR:%08x\n", __FILE__, __func__, __LINE__, data);
 
     ack = _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &data, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d select last AP bank fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
+
     pr_info("%s: [%s] %d IDR:%08x\n", __FILE__, __func__, __LINE__, data);
 
     // select the first AP bank
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d select first AP bank fail\n", __FILE__, __func__, __LINE__);
+    if (ack != SWD_OK)
         return -ENODEV;
-    }
 
     return 0;
 }
@@ -526,48 +447,23 @@ static ssize_t stm32f10xx_program_flash(struct core_mem *cm, void *from, u32 off
     data |= FLASH_CR_PG_MSK;
     _swd_ap_write(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
 
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_read(stm32f10xx_sg, SWD_AP, SWD_READ, SWD_AP_CSW_REG & 0xC, &old_csw, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d read swd ap_csw failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &old_csw, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d read csw fail\n", __FILE__, __func__, __LINE__);
-    }
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
+    _swd_read(stm32f10xx_sg, SWD_AP, SWD_READ, SWD_AP_CSW_REG & 0xC, &old_csw, true);
+    _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &old_csw, true);
 
     data = old_csw & (~0x37); // clear addrinc and size filed
     data |= 0x21; // set the  addrinc to be 0b10, and size to be 0b0001
 
     // set new AP_CSW
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG & 0xC, data, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_csw failed\n", __FILE__, __func__, __LINE__);
-    }
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG & 0xC, data, true);
 
     // write data to flash
     _swd_ap_write(stm32f10xx_sg, buf, cm->flash.base + offset, len);
 
     // restore the value in AP_CSW
-    ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd select failed\n", __FILE__, __func__, __LINE__);
-    }
-
-    ack = _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG & 0xC, old_csw, true);
-    if (ack != SWD_OK) {
-        pr_err("%s: [%s] %d write swd ap_csw failed\n", __FILE__, __func__, __LINE__);
-    }
+    _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_CSW_REG & 0xF0, true);
+    _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_CSW_REG & 0xC, old_csw, true);
 
     retry = RETRY;
     do{
