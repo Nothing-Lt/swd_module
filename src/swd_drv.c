@@ -325,7 +325,6 @@ static int swd_probe(struct platform_device *pdev)
     // find the matching core
     if (of_property_read_string(dev->of_node, "core", &core_name)) {
         pr_err("%s [%s] %d Err with get core\n", SWDDEV_NAME, __func__, __LINE__);
-        stm32f103c8t6_rc.gpio_bind(&sg);
         swd_dev.rc = &stm32f103c8t6_rc;
     }
     for (i = 0 ; 
