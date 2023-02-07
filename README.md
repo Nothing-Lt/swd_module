@@ -17,7 +17,7 @@ A kernel module to program Cortex-M MCU by emulating [ARM Serial Wire Debug (SWD
 Structure of rpu_sysfs "/sys/class/swd/rpu"
 <pre>
 /sys/class/swd/rpu
-├── core_name  // read/write on ram
+├── core_name  // core name
 ├── core_mem // mem info/layout of core
 ├── control // control the core to be halt or unhalt
 ├── flash   // read/write on flash
