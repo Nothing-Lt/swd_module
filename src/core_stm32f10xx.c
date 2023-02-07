@@ -210,8 +210,6 @@ static int stm32f10xx_halt_core(void)
 
 static void stm32f10xx_unhalt_core(void)
 {
-    u8 ack;
-
     // DHCSR.C_DEBUGEN = 1
     _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, SWD_AP_TAR_REG & 0xF0, true);
     _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_TAR_REG & 0xC, SWD_DHCSR_REG, true);
