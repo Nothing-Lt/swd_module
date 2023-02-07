@@ -421,7 +421,6 @@ static void stm32f411xx_lock_flash(void)
 {
     u32 data = 0;
 
-    // _swd_ap_write(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
     data |= FLASH_CR_LOCK_MSK;
     _swd_ap_write(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
