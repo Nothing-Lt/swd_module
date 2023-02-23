@@ -427,7 +427,6 @@ static ssize_t stm32f10xx_program_flash(struct core_mem *cm, void *from, u32 off
     int i;
     int retry;
     int err;
-    u8 ack;
     u32 data;
     u32 cur_base;
     u32 old_csw;
