@@ -116,7 +116,7 @@ int main(int argc, char **argv)
                 continue;
             }
 
-            printf("Programmed -%d/%d-\n", i+1, BUFSIZ/(cm->flash.program_size/4));
+            printf("Programmed -%d/%d-\n", i+1, buf_size/(cm->flash.program_size/4));
             offset += cm->flash.program_size;
         }
     }
