@@ -41,7 +41,7 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ |  |  |  |  |  |  |
-| RPI4 | OK | OK | NG | NG | NG | NG |
+| RPI4 | OK | OK | OK | OK | OK | OK |
 
 ### stm32f411ceu6([blackpill](https://shop.pimoroni.com/products/stm32f411-blackpill-development-board?variant=39274213343315))
 
