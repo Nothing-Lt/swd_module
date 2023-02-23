@@ -36,12 +36,12 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | | | | | | | | |
-| RPI4 | |  |  | | | | | |
+| RPI4 | OK | OK | OK | OK | OK | OK | OK | OK |
 #### Verified function and SBC boards of rpu_sysfs
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ |  |  |  |  |  |  |
-| RPI4 |  |  |  |  |  |  |
+| RPI4 | OK | OK | NG | NG | NG | NG |
 
 ### stm32f411ceu6([blackpill](https://shop.pimoroni.com/products/stm32f411-blackpill-development-board?variant=39274213343315))
 
@@ -49,9 +49,9 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 |     | Reset line | Test Alive | Read IDCODE | Write to RAM | Read from RAM | Write to Flash | Read from Flash | Erase entire Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ | | | | | | | | |
-| RPI4 | |  |  | | | | | |
+| RPI4 | OK | OK  | OK  | OK | OK | OK | OK | OK |
 #### Verified function and SBC boards of rpu_sysfs
 |     | Core halt | Core unhalt | Write to RAM | Read from RAM | Write to Flash | Read from Flash |
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ |  |  |  |  |  |  |
-| RPI4 |  |  |  |  |  |  |
+| RPI4 | OK | OK | OK | OK | OK | OK |
