@@ -323,17 +323,16 @@ static int swd_probe(struct platform_device *pdev)
     }
 
     // find the matching core
-    if (of_property_read_string(dev->of_node, "core", &core_name)) {
-        pr_err("%s [%s] %d Err with get core\n", SWDDEV_NAME, __func__, __LINE__);
-        swd_dev.rc = &stm32f103c8t6_rc;
-    }
-    for (i = 0 ; 
-        i < sizeof(cores)/sizeof(struct core_name_pair *) ; 
-        i++) {
-        if (!strcmp(cores[i]->core_name, core_name)){
-            swd_dev.rc = cores[i];
-            break;
+    swd_dev.rc = &stm32f103c8t6_rc;
+    if (!of_property_read_string(dev->of_node, "core", &core_name)) {
+        for (i = 0 ; i < sizeof(cores)/sizeof(struct core_name_pair *) ; i++) {
+            if (!strcmp(cores[i]->core_name, core_name)) {
+                swd_dev.rc = cores[i];
+                break;
+            }
         }
+    } else {
+        pr_err("%s [%s] %d Err with get core\n", SWDDEV_NAME, __func__, __LINE__);
     }
     swd_dev.rc->gpio_bind(&sg);
 
