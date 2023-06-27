@@ -10,4 +10,4 @@ all: ${BINS}
 
 .PHONY: clean
 clean:
-	rm -rf ${BINS}
+	rm -rf ${BINS} ram.txt
