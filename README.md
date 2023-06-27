@@ -55,3 +55,47 @@ Structure of rpu_sysfs "/sys/class/swd/rpu"
 | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | RPI3-B+ |  |  |  |  |  |  |
 | RPI4 |  |  |  |  |  |  |
+
+
+## Build Instruction
+
+### Prepare Environment
+
+- rpi kernel header
+```
+$ sudo apt update
+$ sudo apt install raspberrypi-kernel-headers
+```
+
+- gcc, make, git
+
+### Clone Code
+
+```
+$ git clone https://github.com/Nothing-Lt/swd_module.git --recursive
+```
+
+### Build swd_module
+
+```
+$ cd swd_module/src
+$ make
+```
+
+### Build test program
+
+Test program for rpu and swd are preapred
+
+#### swd
+```
+$ cd swd_module/test/swd
+$ make
+$ run_test.sh stm32f103c8t6 #or stm32f411ceu6
+```
+
+#### rpu
+```
+$ cd swd_module/test/rpu
+$ make
+$ run_test.sh
+```
