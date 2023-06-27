@@ -86,6 +86,12 @@ $ cd swd_module/src
 $ make
 ```
 
+- Install swd_module
+```
+$ sudo insmod swd.ko
+$ sudo dtoverlay swd-device-overlay.dtbo
+```
+
 ### Build test program
 
 Test program for rpu and swd are preapred
