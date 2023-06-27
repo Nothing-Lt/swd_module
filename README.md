@@ -6,6 +6,10 @@ A kernel module to program Cortex-M MCU by emulating [ARM Serial Wire Debug (SWD
 - Some MPUs like AM33x used by Beaglebone-Black has a PRU and STM32MP1x has a cortex-m core. 
 - This kernel module aims to make the SoC which has no sub-core have an external extended cortex-m sub-core and control it by SoC via emulated SWD protocol.
 
+## Wiring
+Please refer this figure for the wiring
+![](docs/swd_module-wiring.png)
+
 ## Usage
 ### swd
 - Set the _swclk_pin and _swdio_pin.
