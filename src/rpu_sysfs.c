@@ -17,25 +17,41 @@ struct swd_device *rpu_swd_dev;
 
 static ssize_t _rpu_xxx_read(char *buf, loff_t off, size_t count)
 {
-    // u32 pos;
-    // ssize_t len;
-    // ssize_t len_to_read;
     struct rproc_core *rc = rpu_swd_dev->rc;
+
+    rc->read_ram(buf, off, count);
+
+    return count;
+}
+
+static ssize_t flash_write_uni(struct rproc_core *rc, char* buf, u32 offset, u32 count)
+{
+    int err;
+    int pos;
+    int len;
+    int len_to_write;
     struct core_mem *cm = rc->ci->cm;
 
-    // pos = 0;
-    // len_to_read = count;
-    // do {
-        rc->read_ram(buf, off, count);
-        // len = _swd_ap_read(&(buf[pos]), off + pos, 
-        //                 (len_to_read > SWD_BANK_SIZE) ? SWD_BANK_SIZE : len_to_read);
-    //     if (len < 0)
-    //         return -1;
+    pos = 0;
+    len_to_write = count;
+    do {
+        len = (len_to_write > cm->flash.program_size) ? cm->flash.program_size : len_to_write;
+        err = rc->program_flash(cm, &(buf[pos]), offset + pos, len);
+        if (err) {
+            /* Program error, erase flash */
+            rc->erase_flash_page(cm, offset + pos, len);
+            continue;
+        }
 
-    //     pos += len;
-    //     len_to_read -= len;
-    // } while(len_to_read);
+        len_to_write -= len;
+        pos += len;
+    } while(len_to_write);
 
+    return count;
+}
+
+static ssize_t flash_write(struct rproc_core *rc, char* buf, u32 offset, u32 count)
+{
     return count;
 }
 
@@ -232,10 +248,6 @@ rpu_status_unhalt:
 static ssize_t rpu_flash_write(struct file *filp, struct kobject *kobj,
         struct bin_attribute *attr, char *buf, loff_t off, size_t count)
 {
-    int err;
-    int pos;
-    int len;
-    int len_to_write;
     struct rproc_core *rc = rpu_swd_dev->rc;
     struct core_mem *cm = rc->ci->cm;
 
@@ -247,19 +259,10 @@ static ssize_t rpu_flash_write(struct file *filp, struct kobject *kobj,
     if (rpu_status != RPU_STATUS_HALT)
         goto rpu_status_unhalt;
 
-    pos = 0;
-    len_to_write = count;
-    do {
-        len = (len_to_write > cm->flash.program_size) ? cm->flash.program_size : len_to_write;
-        err = rc->program_flash(cm, &(buf[pos]), off + pos, len);
-        if (err) {
-            count = -1;
-            goto rpu_status_unhalt;
-        }
-        
-        len_to_write -= len;
-        pos += len;
-    } while(len_to_write);
+    if (cm->flash.attr)
+       count = flash_write_uni(rc, buf, off, count);
+    else
+        count = flash_write(rc, buf, off, count);
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
 
