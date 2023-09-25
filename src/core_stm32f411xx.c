@@ -104,6 +104,7 @@ struct core_mem stm32f411ceu6_cm = {
         {.start = 128*1024, .size = 128*1024},
         {.start = 256*1024, .size = 128*1024},
         {.start = 384*1024, .size = 128*1024},
+        {.start = 0, .size = 0},
     }
 };
 

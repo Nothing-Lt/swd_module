@@ -95,7 +95,8 @@ struct core_mem stm32f103c8t6_cm = {
         {.start = 0x000, .size = 1024},
 
         // mem_segs for flash
-        {.start = 0x000, .size = 1024}
+        {.start = 0x000, .size = 1024},
+        {.start = 0, .size = 0},
     }
 };
 

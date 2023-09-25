@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/slab.h>
+#include <linux/vmalloc.h>
 
 #include "swd_drv.h"
 #include "rpu_sysfs.h"
@@ -52,6 +53,89 @@ static ssize_t flash_write_uni(struct rproc_core *rc, char* buf, u32 offset, u32
 
 static ssize_t flash_write(struct rproc_core *rc, char* buf, u32 offset, u32 count)
 {
+    int i;
+    int err;
+    int pos;
+    int len;
+    int retry = 10;
+    int len_to_write;
+    u32 page_size = 0;
+    u32 page_offset = 0;
+    char *buf_page = NULL;
+    struct core_mem *cm = rc->ci->cm;
+
+    // 1. find flash page info
+    if (cm->flash.attr) {
+        // non-unified page size, find the corresponding page
+        for (i = cm->flash.offset;
+            (cm->mem_segs[i].start !=0) || (cm->mem_segs[i].size != 0);
+            i++) {
+            if ((offset >= cm->mem_segs[i].start) && \
+                (offset < cm->mem_segs[i].start + cm->mem_segs[i].size)) {
+                    page_offset = cm->mem_segs[i].start;
+                    page_size = cm->mem_segs[i].size;
+                    break;
+            }
+        }
+    } else { // unified page size
+        if (cm->mem_segs[cm->flash.offset].size > count) {
+            // calculate the page base address and size
+            page_offset = offset & ~(cm->mem_segs[cm->flash.offset].size - 1);
+            page_size = cm->mem_segs[cm->flash.offset].size;
+            i = cm->flash.offset;
+        }
+    }
+
+    // 2. keep data from flash page in buffer
+    if ((page_offset == 0) && (page_size == 0)) {
+        pos = 0;
+        buf_page = buf;
+    } else {
+        // get buff to keep data in the page
+        buf_page = vmalloc(page_size);
+        if (!buf_page)
+            return -1;
+
+        // read data from flash
+        if (_rpu_xxx_read(buf_page, page_offset,
+                            offset - page_offset) < 0) {
+            count = -1;
+            goto read_flash_err;
+        }
+
+        // calculate the pos, copy data to buf_page
+        pos = offset - page_offset;
+        memcpy(&(buf_page[pos]), buf, count);
+    }
+
+    // 3. program the flash
+    //    rogram current data first, if there is an error happend,
+    //    reprogram this page.
+    len_to_write = count;
+    do {
+        len = (len_to_write > cm->flash.program_size) ? \
+	      cm->flash.program_size : len_to_write;
+
+        err = rc->program_flash(cm, &(buf_page[pos]), page_offset + pos, len);
+        if (err) {
+            /* Program error, erase this page, and reprogram */
+            rc->erase_flash_page(cm, page_offset, page_size);
+	    if (!retry--){
+                count = -1;
+                goto read_flash_err;
+            }
+            pos = 0;
+            len_to_write = (offset - page_offset) + count;
+            continue;
+        }
+
+        len_to_write -= len;
+        pos += len;
+    } while(len_to_write);
+
+read_flash_err:
+    vfree(buf_page);
+
     return count;
 }
 
@@ -259,8 +343,8 @@ static ssize_t rpu_flash_write(struct file *filp, struct kobject *kobj,
     if (rpu_status != RPU_STATUS_HALT)
         goto rpu_status_unhalt;
 
-    if (cm->flash.attr)
-       count = flash_write_uni(rc, buf, off, count);
+    if (!cm->flash.attr)
+        count = flash_write_uni(rc, buf, off, count);
     else
         count = flash_write(rc, buf, off, count);
 
