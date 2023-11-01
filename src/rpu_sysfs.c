@@ -261,6 +261,7 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,
         struct bin_attribute *attr, char *buf, loff_t off, size_t count)
 {
     int ret, val;
+    int retry = 10;
     struct rproc_core *rc = rpu_swd_dev->rc;
 
     if(!atomic_dec_and_test(&open_lock)){
@@ -281,8 +282,16 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,
         rc->core_unhalt();
     } else {
         rpu_status = RPU_STATUS_HALT;
-        rc->core_init();
-        rc->core_halt();
+
+        retry = 10;
+        do {
+            ret = rc->core_init();
+        } while(ret && retry--);
+
+        retry = 10;
+        do {
+           ret = rc->core_halt();
+        } while(ret && retry--);
     }
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
