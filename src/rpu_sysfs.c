@@ -287,11 +287,19 @@ static ssize_t rpu_control_write(struct file *filp, struct kobject *kobj,
         do {
             ret = rc->core_init();
         } while(ret && retry--);
+        if (!retry) {
+                count = -EBUSY;
+                goto rpu_control_finish;
+	}
 
         retry = 10;
         do {
            ret = rc->core_halt();
         } while(ret && retry--);
+	if (!retry) {
+		count = -EBUSY;
+		goto rpu_control_finish;
+	}
     }
 
     pr_info("%s [%s] finish\n",RPUDEV_NAME, __func__);
