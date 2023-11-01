@@ -325,7 +325,7 @@ static int swd_probe(struct platform_device *pdev)
     // find the matching core
     swd_dev.rc = &stm32f103c8t6_rc;
     if (!of_property_read_string(dev->of_node, "core", &core_name)) {
-        for (i = 0 ; i < sizeof(cores)/sizeof(struct core_name_pair *) ; i++) {
+        for (i = 0 ; i < sizeof(cores)/sizeof(struct rproc_core*) ; i++) {
             if (!strcmp(cores[i]->core_name, core_name)) {
                 swd_dev.rc = cores[i];
                 break;
