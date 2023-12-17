@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menu "Remoteproc drivers"
+
+if REMOTEPROC
+
+config SWD_RPROC
+	tristate "GPIO emulated SWD remoteproc support"
+	help
+	  This is a driver which is using GPIO to emulate the SWD protocol.
+	  It allows the SoCs like RPI which only has application core to have a
+	  add-on sub-core.
+
+endif # REMOTEPROC
+
+endmenu

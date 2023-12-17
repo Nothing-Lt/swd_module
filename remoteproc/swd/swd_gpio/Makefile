@@ -1,0 +1,1 @@
+obj-y +=	swd_gpio.o

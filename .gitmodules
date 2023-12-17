@@ -1,3 +1,0 @@
-[submodule "src/swd_gpio"]
-	path = src/swd_gpio
-	url = https://github.com/Nothing-Lt/swd_gpio.git

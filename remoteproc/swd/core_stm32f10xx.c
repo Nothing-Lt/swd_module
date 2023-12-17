@@ -5,7 +5,7 @@
 #include <linux/gpio.h>
 #include <linux/fs.h>
 
-#include "rproc_core.h"
+#include "swd_core.h"
 #include "swd_gpio/swd_gpio.h"
 
 #define RETRY       600
@@ -109,12 +109,12 @@ struct cm_info stm32f103c8t6_ci = {
 
 static struct swd_gpio *stm32f10xx_sg;
 
-void stm32f10xx_reset(void)
+static void stm32f10xx_reset(void)
 {
     _swd_reset(stm32f10xx_sg);
 }
 
-void stm32f10xx_setup_swd(void)
+static void stm32f10xx_setup_swd(void)
 {
     _swd_jtag_to_swd(stm32f10xx_sg);
 }
@@ -224,7 +224,7 @@ static void stm32f10xx_unhalt_core(void)
     _swd_send(stm32f10xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0007, true);
 }
 
-u32 stm32f10xx_test_alive(void)
+static u32 stm32f10xx_test_alive(void)
 {
     u32 data;
 
@@ -251,14 +251,10 @@ static int stm32f10xx_core_init(void)
     if (ack != SWD_OK)
         return -ENODEV;
 
-    pr_info("%s: [%s] %d idcode:%08x\n", __FILE__, __func__, __LINE__, data);
-
     // Set CSYSPWRUPREQ and CDBGPWRUPREQ
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_CTRLSTAT_REG, SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK, true);
     if (ack != SWD_OK)
         return -ENODEV;
-
-    pr_info("%s: [%s] %d\n", __FILE__, __func__, __LINE__);
 
     // wait until the CSYSPWRUPREQ and CDBGPWRUPREQ are set
     do {
@@ -269,7 +265,6 @@ static int stm32f10xx_core_init(void)
         if ((data & (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK)) == (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK))
             break;
     } while(retry--);
-    pr_info("%s: [%s] %d ctrlstat:%08x\n", __FILE__, __func__, __LINE__, data);
 
     // select the first AP bank
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
@@ -285,13 +280,9 @@ static int stm32f10xx_core_init(void)
     if (ack != SWD_OK)
         return -ENODEV;
 
-    pr_info("%s: [%s] %d IDR:%08x\n", __FILE__, __func__, __LINE__, data);
-
     ack = _swd_read(stm32f10xx_sg, SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &data, true);
     if (ack != SWD_OK)
         return -ENODEV;
-
-    pr_info("%s: [%s] %d IDR:%08x\n", __FILE__, __func__, __LINE__, data);
 
     // select the first AP bank
     ack = _swd_send(stm32f10xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
@@ -309,8 +300,6 @@ static int stm32f10xx_unlock_flash(void)
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
     if (!(data & FLASH_CR_LOCK_MSK))
         return 0;
-
-    pr_info("%s: [%s] %d unlocking flash cur_vla:%08x\n", __FILE__, __func__, __LINE__, data);
 
     data = FLASH_UNLOCK_MAGIC1;
     _swd_ap_write(stm32f10xx_sg, &data, FLASH_KEYR, sizeof(u32));
@@ -343,10 +332,8 @@ static void stm32f10xx_erase_flash_all(void)
     u32 data;
     int retry;
 
-    if(stm32f10xx_unlock_flash()) {
-        pr_err("%s [%s] Unable to unlock flash\n", __FILE__, __func__);
+    if(stm32f10xx_unlock_flash())
         return;
-    }
 
     // set MER = 1
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
@@ -382,10 +369,8 @@ static void stm32f10xx_erase_flash_page(struct core_mem *cm, u32 offset, u32 len
     u32 base = cm->flash.base + offset;
 
     // Unlock flash
-    if(stm32f10xx_unlock_flash()) {
-        pr_err("%s [%s] Unable to unlock flash\n", __FILE__, __func__);
+    if(stm32f10xx_unlock_flash())
         return;
-    }
 
     // 1. write FLASH_CR_PER to 1
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
@@ -435,10 +420,8 @@ static ssize_t stm32f10xx_program_flash(struct core_mem *cm, void *from, u32 off
     u32 len_to_read = len / sizeof(u32);
 
     // Unlock flash
-    if(stm32f10xx_unlock_flash()) {
-        pr_err("%s [%s] Unable to unlock flash\n", __FILE__, __func__);
+    if(stm32f10xx_unlock_flash())
         return -1;
-    }
 
     // Set the programming bit
     _swd_ap_read(stm32f10xx_sg, &data, FLASH_CR, sizeof(u32));
@@ -484,8 +467,6 @@ static ssize_t stm32f10xx_program_flash(struct core_mem *cm, void *from, u32 off
         cur_base += sizeof(u32);
     }
 
-    pr_info("%s: [%s] errors:%d\n", __FILE__, __func__, err);
-
     if (err) {
         stm32f10xx_erase_flash_page(cm, offset, len);
         stm32f10xx_lock_flash();
@@ -524,7 +505,7 @@ static ssize_t stm32f10xx_write_ram(struct core_mem *cm, void* from, u32 offset,
     return err;
 }
 
-ssize_t stm32f10xx_read(void *to, u32 base, const u32 len)
+static ssize_t stm32f10xx_read(void *to, u32 base, const u32 len)
 {
    return _swd_ap_read(stm32f10xx_sg, to, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
 }

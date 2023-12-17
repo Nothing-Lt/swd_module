@@ -5,7 +5,7 @@
 #include <linux/gpio.h>
 #include <linux/fs.h>
 
-#include "rproc_core.h"
+#include "swd_core.h"
 #include "swd_gpio/swd_gpio.h"
 
 #define RETRY       60000
@@ -117,12 +117,12 @@ struct cm_info stm32f411ceu6_ci = {
 
 static struct swd_gpio *stm32f411xx_sg;
 
-void stm32f411xx_reset(void)
+static void stm32f411xx_reset(void)
 {
     _swd_reset(stm32f411xx_sg);
 }
 
-void stm32f411xx_setup_swd(void)
+static void stm32f411xx_setup_swd(void)
 {
     _swd_jtag_to_swd(stm32f411xx_sg);
 }
@@ -232,7 +232,7 @@ static void stm32f411xx_unhalt_core(void)
     _swd_send(stm32f411xx_sg, SWD_AP, SWD_WRITE, SWD_AP_DRW_REG & 0xC, 0x05FA0007, true);
 }
 
-u32 stm32f411xx_test_alive(void)
+static u32 stm32f411xx_test_alive(void)
 {
     u32 data;
 
@@ -259,14 +259,10 @@ static int stm32f411xx_core_init(void)
     if (ack != SWD_OK)
         return -ENODEV;
 
-    pr_info("[%s] %d idcode:%08x\n",  __func__, __LINE__, data);
-
     // Set CSYSPWRUPREQ and CDBGPWRUPREQ
     ack = _swd_send(stm32f411xx_sg, SWD_DP, SWD_WRITE, SWD_DP_CTRLSTAT_REG, SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK, true);
     if (ack != SWD_OK)
         return -ENODEV;
-
-    pr_info("[%s] %d\n",  __func__, __LINE__);
 
     // wait until the CSYSPWRUPREQ and CDBGPWRUPREQ are set
     do {
@@ -277,7 +273,6 @@ static int stm32f411xx_core_init(void)
         if ((data & (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK)) == (SWD_CSYSPWRUPREQ_MSK | SWD_CDBGPWRUPREQ_MSK))
             break;
     } while(retry--);
-    pr_info("[%s] %d ctrlstat:%08x\n",  __func__, __LINE__, data);
 
     // select the first AP bank
     ack = _swd_send(stm32f411xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
@@ -293,13 +288,9 @@ static int stm32f411xx_core_init(void)
     if (ack != SWD_OK)
         return -ENODEV;
 
-    pr_info("[%s] %d IDR:%08x\n",  __func__, __LINE__, data);
-
     ack = _swd_read(stm32f411xx_sg, SWD_DP, SWD_READ, SWD_DP_RDBUFF_REG, &data, true);
     if (ack != SWD_OK)
         return -ENODEV;
-
-    pr_info("[%s] %d IDR:%08x\n",  __func__, __LINE__, data);
 
     // select the first AP bank
     ack = _swd_send(stm32f411xx_sg, SWD_DP, SWD_WRITE, SWD_DP_SELECT_REG, 0x0, true);
@@ -317,8 +308,6 @@ static int stm32f411xx_unlock_flash(void)
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
     if (!(data & FLASH_CR_LOCK_MSK))
         return 0;
-
-    pr_info("[%s] %d unlocking flash cur_val:%08x\n",  __func__, __LINE__, data);
 
     data = FLASH_UNLOCK_MAGIC1;
     _swd_ap_write(stm32f411xx_sg, &data, FLASH_KEYR, sizeof(u32));
@@ -351,17 +340,13 @@ static void stm32f411xx_erase_flash_all(void)
     u32 data;
     int retry;
 
-    if(stm32f411xx_unlock_flash()) {
-        pr_err("[%s] Unable to unlock flash\n",  __func__);
+    if(stm32f411xx_unlock_flash())
         return;
-    }
 
     // Check if Flash is busy.
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_SR, sizeof(u32));
-    if (data & FLASH_SR_BSY_MSK) {
-        pr_err("[%s] Flash busy\n",  __func__);
+    if (data & FLASH_SR_BSY_MSK)
         return;
-    }
 
     // set MER = 1
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_CR, sizeof(u32));
@@ -396,17 +381,13 @@ static void stm32f411xx_erase_flash_sector(struct core_mem *cm, u32 offset, u32 
     u32 sctr_nmb;
     u32 erase_offset;
 
-    if(stm32f411xx_unlock_flash()) {
-        pr_err("[%s] Unable to unlock flash\n",  __func__);
+    if(stm32f411xx_unlock_flash())
         return;
-    }
 
     // check if the flash is busy
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_SR, sizeof(u32));
-    if(data & FLASH_SR_BSY_MSK){
-        pr_err("[%s] Flash busy\n",  __func__);
+    if(data & FLASH_SR_BSY_MSK)
         return;
-    }
 
     // do sector erase
     erase_offset = offset;
@@ -463,16 +444,13 @@ static ssize_t stm32f411xx_program_flash(struct core_mem *cm, void *from, u32 of
     u32 len_to_read = len / sizeof(u32);
 
     // Unlock flash
-    if(stm32f411xx_unlock_flash()) {
-        pr_err("[%s] Unable to unlock flash\n",  __func__);
+    if(stm32f411xx_unlock_flash())
         return -1;
-    }
 
     // check if the flash is busy
     _swd_ap_read(stm32f411xx_sg, &data, FLASH_SR, sizeof(u32));
-    if(data & FLASH_SR_BSY_MSK){
+    if(data & FLASH_SR_BSY_MSK) {
         stm32f411xx_lock_flash();
-        pr_err("[%s] Flash busy\n",  __func__);
         return -1;
     }
 
@@ -543,7 +521,7 @@ static ssize_t stm32f411xx_write_ram(struct core_mem *cm, void* from, u32 offset
     return err;
 }
 
-ssize_t stm32f411xx_read(void *to, u32 base, const u32 len)
+static ssize_t stm32f411xx_read(void *to, u32 base, const u32 len)
 {
    return _swd_ap_read(stm32f411xx_sg, to, base, len > SWD_BANK_SIZE ? SWD_BANK_SIZE : len);
 }
